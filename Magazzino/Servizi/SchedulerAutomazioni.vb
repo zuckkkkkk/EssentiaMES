@@ -25,6 +25,11 @@ Public Class SchedulerAutomazioni
             RecurringJob.AddOrUpdate("ordini-automatici",
                                      Sub() SchedulerAutomazioni.JobOrdiniAutomatici(),
                                      CronOrdiniAutomatici())
+
+            ' Job: sincronizzazione giornaliera giacenze da Mexal (rispetta l'interruttore).
+            RecurringJob.AddOrUpdate("sync-mexal",
+                                     Sub() SchedulerAutomazioni.JobSyncMexal(),
+                                     CronSyncGiornaliera())
         Catch ex As Exception
             Try
                 Using db As New BrighettiModels
@@ -47,6 +52,30 @@ Public Class SchedulerAutomazioni
     Public Shared Sub JobOrdiniAutomatici()
         OrdiniAutomaticiService.GeneraProposte("", "Scheduler", rispettaToggle:=True, origine:="Pianificato")
     End Sub
+
+    ''' <summary>Job ricorrente: sincronizza le giacenze da Mexal se l'automatismo è attivo.</summary>
+    Public Shared Sub JobSyncMexal()
+        MexalSyncService.SincronizzaDaConfigurazione("", "Scheduler", rispettaToggle:=True)
+    End Sub
+
+    ''' <summary>Espressione cron della sync giornaliera (default 02:00).</summary>
+    Private Shared Function CronSyncGiornaliera() As String
+        Dim ora As Integer = 2
+        Dim minuto As Integer = 0
+        Try
+            Dim valore = ImpostazioniService.LeggiTesto(ChiaviImpostazioni.SchedulerOraSyncGiornaliera, "02:00")
+            Dim parti = valore.Split(":"c)
+            If parti.Length >= 2 Then
+                Integer.TryParse(parti(0), ora)
+                Integer.TryParse(parti(1), minuto)
+            End If
+        Catch
+            ora = 2 : minuto = 0
+        End Try
+        If ora < 0 OrElse ora > 23 Then ora = 2
+        If minuto < 0 OrElse minuto > 59 Then minuto = 0
+        Return minuto.ToString() & " " & ora.ToString() & " * * *"
+    End Function
 
     ''' <summary>Espressione cron per il controllo scorte (default ogni 60 minuti).</summary>
     Private Shared Function CronOrdiniAutomatici() As String

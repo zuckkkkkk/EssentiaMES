@@ -455,6 +455,7 @@
     <Compile Include="Controllers\Brighetti_OrdiniAutomaticiController.vb" />
     <Compile Include="Controllers\Brighetti_ProceduraController.vb" />
     <Compile Include="Controllers\Brighetti_RepartoController.vb" />
+    <Compile Include="Controllers\Brighetti_SyncController.vb" />
     <Compile Include="Controllers\MacchineController.vb" />
     <Compile Include="Controllers\ManageController.vb" />
     <Compile Include="Global.asax.vb">
@@ -501,6 +502,8 @@
     <Compile Include="Controllers\HomeController.vb" />
     <Compile Include="Costanti.vb" />
     <Compile Include="Servizi\ImpostazioniService.vb" />
+    <Compile Include="Servizi\MexalSource.vb" />
+    <Compile Include="Servizi\MexalSyncService.vb" />
     <Compile Include="Servizi\OrdiniAutomaticiService.vb" />
     <Compile Include="Servizi\SchedulerAutomazioni.vb" />
     <Compile Include="Startup.vb" />
@@ -734,6 +737,7 @@
     <Content Include="Views\Brighetti_Procedura\Index.vbhtml" />
     <Content Include="Views\Brighetti_Impostazioni\Index.vbhtml" />
     <Content Include="Views\Brighetti_OrdiniAutomatici\Index.vbhtml" />
+    <Content Include="Views\Brighetti_Sync\Index.vbhtml" />
     <Content Include="Views\Brighetti_Articolo\Create.vbhtml" />
     <Content Include="Views\Brighetti_Articolo\Delete.vbhtml" />
     <Content Include="Views\Brighetti_Articolo\Details.vbhtml" />
