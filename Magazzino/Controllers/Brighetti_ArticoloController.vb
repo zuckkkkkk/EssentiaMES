@@ -340,7 +340,7 @@ Namespace Controllers
         'Per altri dettagli, vedere https://go.microsoft.com/fwlink/?LinkId=317598.
         <HttpPost()>
         <ValidateAntiForgeryToken()>
-        Function Create(<Bind(Include:="Id,CodiceArticolo,DescrizioneArticolo,NoteArticolo,FamigliaId,Importanza")> ByVal brighetti_Articolo As Brighetti_Articolo) As JsonResult
+        Function Create(<Bind(Include:="Id,CodiceArticolo,DescrizioneArticolo,NoteArticolo,FamigliaId,Importanza,LottoMinimo")> ByVal brighetti_Articolo As Brighetti_Articolo) As JsonResult
             Dim Opid = vbNullString
             Dim OpName = vbNullString
             Try
@@ -353,6 +353,7 @@ Namespace Controllers
                     .NoteArticolo = brighetti_Articolo.NoteArticolo,
                     .FamigliaId = brighetti_Articolo.FamigliaId,
                     .Importanza = brighetti_Articolo.Importanza,
+                    .LottoMinimo = brighetti_Articolo.LottoMinimo,
                     .UltimaModifica = New TipoUltimaModifica With {
                         .Data = DateTime.Now,
                         .Operatore = OpName,
@@ -716,7 +717,7 @@ Namespace Controllers
         'Per altri dettagli, vedere https://go.microsoft.com/fwlink/?LinkId=317598.
         <HttpPost()>
         <ValidateAntiForgeryToken()>
-        Function Edit(<Bind(Include:="Id,CodiceArticolo,DescrizioneArticolo,NoteArticolo,FamigliaId,Importanza")> ByVal brighetti_Articolo As Brighetti_Articolo) As ActionResult
+        Function Edit(<Bind(Include:="Id,CodiceArticolo,DescrizioneArticolo,NoteArticolo,FamigliaId,Importanza,LottoMinimo")> ByVal brighetti_Articolo As Brighetti_Articolo) As ActionResult
             Dim OpID = vbNullString
             Dim OpName = vbNullString
             Try
@@ -745,6 +746,10 @@ Namespace Controllers
                 End If
                 If art.Importanza <> brighetti_Articolo.Importanza Then
                     art.Importanza = brighetti_Articolo.Importanza
+                    db.SaveChanges()
+                End If
+                If art.LottoMinimo <> brighetti_Articolo.LottoMinimo Then
+                    art.LottoMinimo = brighetti_Articolo.LottoMinimo
                     db.SaveChanges()
                 End If
                 art.UltimaModifica = New TipoUltimaModifica With {

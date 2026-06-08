@@ -348,7 +348,7 @@ Namespace Controllers
         'Per altri dettagli, vedere https://go.microsoft.com/fwlink/?LinkId=317598.
         <HttpPost()>
         <ValidateAntiForgeryToken()>
-        Function Create(<Bind(Include:="Id,CodiceArticolo,CodiceMagazzino,QuantitàGiacenza,QuantitàSottoscorta,UltimaModifica")> ByVal brighetti_Giacenza As Brighetti_Giacenza) As ActionResult
+        Function Create(<Bind(Include:="Id,CodiceArticolo,CodiceMagazzino,QuantitàGiacenza,QuantitàSottoscorta,QuantitàScortaMassima,UltimaModifica")> ByVal brighetti_Giacenza As Brighetti_Giacenza) As ActionResult
             Dim Opid = vbNullString
             Dim OpName = vbNullString
             Try
@@ -360,6 +360,7 @@ Namespace Controllers
                         .CodiceMagazzino = brighetti_Giacenza.CodiceMagazzino,
                         .QuantitàGiacenza = brighetti_Giacenza.QuantitàGiacenza,
                         .QuantitàSottoscorta = brighetti_Giacenza.QuantitàSottoscorta,
+                        .QuantitàScortaMassima = brighetti_Giacenza.QuantitàScortaMassima,
                         .UltimaModifica = New TipoUltimaModifica With {
                         .Data = DateTime.Now,
                         .Operatore = OpName,
@@ -406,7 +407,7 @@ Namespace Controllers
         'Per altri dettagli, vedere https://go.microsoft.com/fwlink/?LinkId=317598.
         <HttpPost()>
         <ValidateAntiForgeryToken()>
-        Function Edit(<Bind(Include:="Id,CodiceArticolo,CodiceMagazzino,QuantitàGiacenza,QuantitàSottoscorta,UltimaModifica")> ByVal brighetti_Giacenza As Brighetti_Giacenza) As ActionResult
+        Function Edit(<Bind(Include:="Id,CodiceArticolo,CodiceMagazzino,QuantitàGiacenza,QuantitàSottoscorta,QuantitàScortaMassima,UltimaModifica")> ByVal brighetti_Giacenza As Brighetti_Giacenza) As ActionResult
             Dim OpID = vbNullString
             Dim OpName = vbNullString
             Try
@@ -418,20 +419,24 @@ Namespace Controllers
                         Return Json(New With {.ok = False, .message = "Impossibile trovare l'articolo richiesto"})
                         db.SaveChanges()
                     End If
-                    If giacenza.CodiceArticolo <> giacenza.CodiceArticolo Then
-                        giacenza.CodiceArticolo = giacenza.CodiceArticolo
+                    If giacenza.CodiceArticolo <> brighetti_Giacenza.CodiceArticolo Then
+                        giacenza.CodiceArticolo = brighetti_Giacenza.CodiceArticolo
                         db.SaveChanges()
                     End If
-                    If giacenza.CodiceMagazzino <> giacenza.CodiceMagazzino Then
-                        giacenza.CodiceMagazzino = giacenza.CodiceMagazzino
+                    If giacenza.CodiceMagazzino <> brighetti_Giacenza.CodiceMagazzino Then
+                        giacenza.CodiceMagazzino = brighetti_Giacenza.CodiceMagazzino
                         db.SaveChanges()
                     End If
-                    If giacenza.QuantitàGiacenza <> giacenza.QuantitàGiacenza Then
-                        giacenza.QuantitàGiacenza = giacenza.QuantitàGiacenza
+                    If giacenza.QuantitàGiacenza <> brighetti_Giacenza.QuantitàGiacenza Then
+                        giacenza.QuantitàGiacenza = brighetti_Giacenza.QuantitàGiacenza
                         db.SaveChanges()
                     End If
-                    If giacenza.QuantitàSottoscorta <> giacenza.QuantitàSottoscorta Then
-                        giacenza.QuantitàSottoscorta = giacenza.QuantitàSottoscorta
+                    If giacenza.QuantitàSottoscorta <> brighetti_Giacenza.QuantitàSottoscorta Then
+                        giacenza.QuantitàSottoscorta = brighetti_Giacenza.QuantitàSottoscorta
+                        db.SaveChanges()
+                    End If
+                    If giacenza.QuantitàScortaMassima <> brighetti_Giacenza.QuantitàScortaMassima Then
+                        giacenza.QuantitàScortaMassima = brighetti_Giacenza.QuantitàScortaMassima
                         db.SaveChanges()
                     End If
                     giacenza.UltimaModifica = New TipoUltimaModifica With {

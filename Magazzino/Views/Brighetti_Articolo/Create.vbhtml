@@ -33,6 +33,13 @@ End Code
         </div>
     </div>
     <div class="row">
+        <div class="col-6">
+            @Html.LabelFor(Function(model) model.LottoMinimo, htmlAttributes:=New With {.class = "control-label col-md-12"})
+            @Html.EditorFor(Function(model) model.LottoMinimo, New With {.htmlAttributes = New With {.class = "form-control"}})
+            @Html.ValidationMessageFor(Function(model) model.LottoMinimo, "", New With {.class = "text-danger"})
+        </div>
+    </div>
+    <div class="row">
         <div class="col-12">
             @Html.LabelFor(Function(model) model.NoteArticolo, htmlAttributes:=New With {.class = "control-label col-md-12"})
             @Html.TextAreaFor(Function(model) model.NoteArticolo, New With {.class = "form-control", .rows = "6"})

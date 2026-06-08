@@ -60,6 +60,9 @@ Public Class BrighettiModels
     Public Overridable Property Log() As DbSet(Of Log)
     Public Overridable Property Audit() As DbSet(Of Audit)
     Public Overridable Property Brighetti_Planimetria() As DbSet(Of Brighetti_Planimetria)
+    'AUTOMAZIONI
+    Public Overridable Property Brighetti_Impostazioni() As DbSet(Of Brighetti_Impostazione)
+    Public Overridable Property Brighetti_OrdiniAutomatici() As DbSet(Of Brighetti_OrdineAutomatico)
 
 
 End Class
@@ -150,6 +153,8 @@ Public Class Brighetti_Articolo
     Public Property FamigliaId As Integer
     <Display(Name:="Importanza")>
     Public Property Importanza As ImportanzaArticolo
+    <Display(Name:="Lotto Minimo")>
+    Public Property LottoMinimo As Integer = 0
     <Display(Name:="Ultima Modifica")>
     Public Property UltimaModifica As TipoUltimaModifica
 End Class
@@ -185,6 +190,8 @@ Public Class Brighetti_Giacenza
     Public Property QuantitàGiacenza As Decimal
     <Display(Name:="Q.tà Sottoscorta")>
     Public Property QuantitàSottoscorta As Decimal
+    <Display(Name:="Q.tà Scorta Massima")>
+    Public Property QuantitàScortaMassima As Decimal
     <Display(Name:="Q.tà In Previsione D'entrata")>
     Public Property InPrevisioneEntrata As Decimal
     Public Property ListaQuantità As List(Of Brighetti_DettagliGiacenza)
@@ -268,6 +275,8 @@ Public Class Brighetti_Lotti
     Public Property StatoLotto As StatoLotto
     <Display(Name:="Tipologia Lotto")>
     Public Property TipologiaLotto As String
+    <Display(Name:="ADL/ACL")>
+    Public Property CodiceADLACL As String
     Public Property IdMagazzinoProvenienza As Integer
     <Display(Name:="Fornitore")>
     Public Property Fornitore As String
@@ -402,6 +411,53 @@ Public Class Brighetti_Planimetria
     <Display(Name:="Ultima Modifica")>
     Public Property UltimaModifica As TipoUltimaModifica
 End Class
+'========================================================================== AUTOMAZIONI
+<Table("Brighetti_Impostazioni")>
+Public Class Brighetti_Impostazione
+    <Key>
+    Public Property Id As Integer
+    <Display(Name:="Chiave")>
+    Public Property Chiave As String
+    <Display(Name:="Valore")>
+    Public Property Valore As String
+    <Display(Name:="Descrizione")>
+    Public Property Descrizione As String
+    <Display(Name:="Categoria")>
+    Public Property Categoria As String
+    <Display(Name:="Tipo")>
+    Public Property Tipo As TipoImpostazione
+    <Display(Name:="Ultima Modifica")>
+    Public Property UltimaModifica As TipoUltimaModifica
+End Class
+<Table("Brighetti_OrdiniAutomatici")>
+Public Class Brighetti_OrdineAutomatico
+    <Key>
+    Public Property Id As Integer
+    <Display(Name:="Codice Articolo")>
+    Public Property CodiceArticolo As String
+    <Display(Name:="Codice Magazzino")>
+    Public Property CodiceMagazzino As String
+    <Display(Name:="Q.tà Giacenza")>
+    Public Property QuantitàGiacenza As Decimal
+    <Display(Name:="Scorta Minima")>
+    Public Property ScortaMinima As Decimal
+    <Display(Name:="Scorta Massima")>
+    Public Property ScortaMassima As Decimal
+    <Display(Name:="Lotto Minimo")>
+    Public Property LottoMinimo As Integer
+    <Display(Name:="Q.tà Proposta")>
+    Public Property QuantitàProposta As Decimal
+    <Display(Name:="Stato")>
+    Public Property Stato As StatoOrdineAutomatico
+    <Display(Name:="Origine")>
+    Public Property Origine As String
+    <Display(Name:="Note")>
+    Public Property Note As String
+    <Display(Name:="Data Generazione")>
+    Public Property DataGenerazione As DateTime
+    <Display(Name:="Ultima Modifica")>
+    Public Property UltimaModifica As TipoUltimaModifica
+End Class
 '======================================================================================= COMPLEX TYPES
 <ComplexType>
 Public Class TipoUltimaModifica
@@ -480,6 +536,17 @@ Public Enum TipoMacchina As Byte
     opcua = 2
     Scheenberger = 3
 End Enum
+Public Enum TipoImpostazione As Byte
+    Booleano = 0
+    Testo = 1
+    Numero = 2
+End Enum
+Public Enum StatoOrdineAutomatico As Byte
+    Proposto = 0
+    Confermato = 1
+    Annullato = 2
+    Inviato = 3
+End Enum
 '======================================================================================= VIEWMODEL
 Public Class Brighetti_Macchina_Viewmodel
     <Key>
@@ -537,6 +604,8 @@ Public Class Brighetti_Lotti_Edit_ViewModel
     Public Property StatoLotto As StatoLotto
     <Display(Name:="Fornitore")>
     Public Property Fornitore As String
+    <Display(Name:="ADL/ACL")>
+    Public Property CodiceADLACL As String
     <Display(Name:="Lista Articoli")>
     Public Property ListaArticoli As List(Of Brighetti_Lotti_Articoli)
     <Display(Name:="Ultima Modifica")>
@@ -678,4 +747,8 @@ Public Class Brighetti_Articolo_ViewModel
     Public Property FamigliaId As String
     <Display(Name:="Ultima Modifica")>
     Public Property UltimaModifica As TipoUltimaModifica
+End Class
+Public Class ImpostazioniCategoriaViewModel
+    Public Property Categoria As String
+    Public Property Impostazioni As List(Of Brighetti_Impostazione)
 End Class

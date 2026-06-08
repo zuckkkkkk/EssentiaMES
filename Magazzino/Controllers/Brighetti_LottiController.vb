@@ -79,7 +79,7 @@ Namespace Controllers
         'Per altri dettagli, vedere https://go.microsoft.com/fwlink/?LinkId=317598.
         <HttpPost()>
         <ValidateAntiForgeryToken()>
-        Function Create(<Bind(Include:="IdLotto,NomeLotto,DescrizioneLotto,UltimaModifica")> ByVal brighetti_Lotti As Brighetti_Lotti) As ActionResult
+        Function Create(<Bind(Include:="IdLotto,NomeLotto,DescrizioneLotto,CodiceADLACL,UltimaModifica")> ByVal brighetti_Lotti As Brighetti_Lotti) As ActionResult
             If ModelState.IsValid Then
                 db.Brighetti_Lotti.Add(brighetti_Lotti)
                 db.SaveChanges()
@@ -106,6 +106,7 @@ Namespace Controllers
             .Fornitore = brighetti_Lotti.Fornitore,
             .IdLotto = brighetti_Lotti.IdLotto,
             .NomeLotto = brighetti_Lotti.NomeLotto,
+            .CodiceADLACL = brighetti_Lotti.CodiceADLACL,
             .UltimaModifica = brighetti_Lotti.UltimaModifica,
             .ListaArticoli = listaArticoli
             }
@@ -117,7 +118,7 @@ Namespace Controllers
         'Per altri dettagli, vedere https://go.microsoft.com/fwlink/?LinkId=317598.
         <HttpPost()>
         <ValidateAntiForgeryToken()>
-        Function Edit(<Bind(Include:="IdLotto,NomeLotto,StatoLotto,DescrizioneLotto,UltimaModifica,Fornitore,ListaArticoli")> ByVal Brighetti_Lotti_Edit_ViewModel As Brighetti_Lotti_Edit_ViewModel) As JsonResult
+        Function Edit(<Bind(Include:="IdLotto,NomeLotto,StatoLotto,DescrizioneLotto,CodiceADLACL,UltimaModifica,Fornitore,ListaArticoli")> ByVal Brighetti_Lotti_Edit_ViewModel As Brighetti_Lotti_Edit_ViewModel) As JsonResult
             Dim OpID = vbNullString
             Dim OpName = vbNullString
             Dim NowDate = DateTime.Now
@@ -156,6 +157,10 @@ Namespace Controllers
                     End If
                     If lotto.Fornitore <> Brighetti_Lotti_Edit_ViewModel.Fornitore Then
                         lotto.Fornitore = Brighetti_Lotti_Edit_ViewModel.Fornitore
+                        db.SaveChanges()
+                    End If
+                    If lotto.CodiceADLACL <> Brighetti_Lotti_Edit_ViewModel.CodiceADLACL Then
+                        lotto.CodiceADLACL = Brighetti_Lotti_Edit_ViewModel.CodiceADLACL
                         db.SaveChanges()
                     End If
                     If lotto.StatoLotto <> Brighetti_Lotti_Edit_ViewModel.StatoLotto Then

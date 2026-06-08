@@ -61,6 +61,13 @@
                             <a href="@Url.Action("Storico", "Home")">Dashboard Utenti</a>
                         </div>
                     </div>
+                    <div Class="col dropup" style="display: flex; justify-content: center;">
+                        <btn><i Class="dropbtn fa-solid fa-robot fa-2x @IIf(Html.ViewContext.RouteData.GetRequiredString("controller") = "Brighetti_Impostazioni" OrElse Html.ViewContext.RouteData.GetRequiredString("controller") = "Brighetti_OrdiniAutomatici", "fa-gradient", "fa-gradient-Not")"></i></btn>
+                        <div class="dropup-content">
+                            <a href="@Url.Action("Index", "Brighetti_Impostazioni")">Automazioni</a>
+                            <a href="@Url.Action("Index", "Brighetti_OrdiniAutomatici")">Ordini Automatici</a>
+                        </div>
+                    </div>
                     <div Class="col" style="display: flex; justify-content: center; align-items:center">
                         <a href="@Url.Action("Account", "Manage")"><i Class="fa-solid fa-user fa-2x @IIf(Html.ViewContext.RouteData.GetRequiredString("action") = "Account", "fa-gradient", "fa-gradient-Not")"></i></a>
                     </div>

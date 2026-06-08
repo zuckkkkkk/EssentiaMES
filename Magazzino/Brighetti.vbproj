@@ -447,10 +447,12 @@
     <Compile Include="Controllers\AccountController.vb" />
     <Compile Include="Controllers\Brighetti_ArticoloController.vb" />
     <Compile Include="Controllers\Brighetti_GiacenzaController.vb" />
+    <Compile Include="Controllers\Brighetti_ImpostazioniController.vb" />
     <Compile Include="Controllers\Brighetti_LottiController.vb" />
     <Compile Include="Controllers\Brighetti_MacchinaController.vb" />
     <Compile Include="Controllers\Brighetti_MagazzinoController.vb" />
     <Compile Include="Controllers\Brighetti_OperatoriController.vb" />
+    <Compile Include="Controllers\Brighetti_OrdiniAutomaticiController.vb" />
     <Compile Include="Controllers\Brighetti_ProceduraController.vb" />
     <Compile Include="Controllers\Brighetti_RepartoController.vb" />
     <Compile Include="Controllers\MacchineController.vb" />
@@ -498,6 +500,8 @@
     </Compile>
     <Compile Include="Controllers\HomeController.vb" />
     <Compile Include="Costanti.vb" />
+    <Compile Include="Servizi\ImpostazioniService.vb" />
+    <Compile Include="Servizi\OrdiniAutomaticiService.vb" />
     <Compile Include="Startup.vb" />
   </ItemGroup>
   <ItemGroup>
@@ -664,6 +668,8 @@
       <LastGenOutput>Settings.Designer.vb</LastGenOutput>
     </None>
     <None Include="packages.config" />
+    <None Include="AGGIORNAMENTO_DB.sql" />
+    <None Include="AUTOMAZIONI_README.md" />
     <None Include="Scripts\jquery-3.4.1.intellisense.js" />
     <Compile Include="Models\DataTableAjaxPostModel.vb" />
     <Content Include="Scripts\datepicker.js" />
@@ -725,6 +731,8 @@
     <Content Include="Views\Brighetti_Procedura\Details.vbhtml" />
     <Content Include="Views\Brighetti_Procedura\Edit.vbhtml" />
     <Content Include="Views\Brighetti_Procedura\Index.vbhtml" />
+    <Content Include="Views\Brighetti_Impostazioni\Index.vbhtml" />
+    <Content Include="Views\Brighetti_OrdiniAutomatici\Index.vbhtml" />
     <Content Include="Views\Brighetti_Articolo\Create.vbhtml" />
     <Content Include="Views\Brighetti_Articolo\Delete.vbhtml" />
     <Content Include="Views\Brighetti_Articolo\Details.vbhtml" />

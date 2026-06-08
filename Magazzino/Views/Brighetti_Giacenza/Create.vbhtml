@@ -30,5 +30,13 @@
                 @Html.ValidationMessageFor(Function(model) model.QuantitàSottoscorta, "", New With {.class = "text-danger"})
             </div>
         </div>
+
+        <div class="row">
+            <div class="col-md-6">
+            @Html.LabelFor(Function(model) model.QuantitàScortaMassima, htmlAttributes:=New With {.class = "control-label col-md-6"})
+                @Html.EditorFor(Function(model) model.QuantitàScortaMassima, New With {.htmlAttributes = New With {.class = "form-control", .type = "number"}})
+                @Html.ValidationMessageFor(Function(model) model.QuantitàScortaMassima, "", New With {.class = "text-danger"})
+            </div>
+        </div>
     </div>
 End Using
