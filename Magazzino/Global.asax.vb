@@ -16,5 +16,9 @@ Public Class MvcApplication
         FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters)
         RouteConfig.RegisterRoutes(RouteTable.Routes)
         BundleConfig.RegisterBundles(BundleTable.Bundles)
+
+        ' Scheduler degli automatismi (Hangfire). Avvio protetto: eventuali errori
+        ' non bloccano l'avvio dell'applicazione web.
+        SchedulerAutomazioni.Configura()
     End Sub
 End Class
