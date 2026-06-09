@@ -430,6 +430,12 @@ Namespace Controllers
                             NextAct.StatoAttività = TipoStatoAttività.In_attesa
                             db.SaveChanges()
                         End If
+                        'Creazione automatica del lotto alla chiusura della fase (se l'automatismo è attivo)
+                        Try
+                            LottiAutomaticiService.CreaLottoDaVersamento(attività.CodiceArticolo, attività.QuantitàProdotta, OpID, OpName)
+                        Catch exLotto As Exception
+                            'Un errore nella creazione del lotto non deve bloccare la chiusura dell'attività.
+                        End Try
                 End Select
 
             Catch ex As Exception

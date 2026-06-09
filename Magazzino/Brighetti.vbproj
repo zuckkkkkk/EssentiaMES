@@ -502,6 +502,7 @@
     <Compile Include="Controllers\HomeController.vb" />
     <Compile Include="Costanti.vb" />
     <Compile Include="Servizi\ImpostazioniService.vb" />
+    <Compile Include="Servizi\LottiAutomaticiService.vb" />
     <Compile Include="Servizi\MexalSource.vb" />
     <Compile Include="Servizi\MexalSyncService.vb" />
     <Compile Include="Servizi\OrdiniAutomaticiService.vb" />

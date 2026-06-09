@@ -167,6 +167,14 @@ Namespace Controllers
                         lotto.StatoLotto = Brighetti_Lotti_Edit_ViewModel.StatoLotto
                         db.SaveChanges()
                     End If
+                    'Se il lotto è "Ritornato", sblocca la fase successiva (se l'automatismo è attivo)
+                    If Brighetti_Lotti_Edit_ViewModel.StatoLotto = StatoLotto.Ritornato Then
+                        Try
+                            LottiAutomaticiService.SbloccaFaseDaLottoRitornato(Brighetti_Lotti_Edit_ViewModel.IdLotto, OpID, OpName)
+                        Catch exSblocco As Exception
+                            'Lo sblocco automatico non deve bloccare il salvataggio del lotto.
+                        End Try
+                    End If
                     lotto.UltimaModifica = New TipoUltimaModifica With {
                         .Data = NowDate,
                         .Operatore = OpName,

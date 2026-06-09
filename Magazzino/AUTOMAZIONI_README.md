@@ -53,9 +53,60 @@ Genera **proposte di riordino** per gli articoli sotto scorta minima:
 5. Quando il comportamento è corretto, attivare l'interruttore
    *“ordini automatici – abilitato”* per la generazione pianificata.
 
-## 4. Stato delle altre automazioni
+## 4. Pianificazione (Hangfire)
 
-Vengono rilasciate a fasi successive (vedi commit dedicati): sincronizzazione
-giornaliera con **Mexal**, pianificazione **Hangfire**, creazione automatica dei
-lotti e sblocco fase su lotto *Ritornato*. Anche queste resteranno spente finché
-non attivate dal pannello.
+All'avvio dell'applicazione (`Global.asax`) viene configurato Hangfire (usa la
+connessione `BrighettiModels`, crea da sé le proprie tabelle `HangFire.*`) e
+vengono registrati due job ricorrenti:
+
+- **ordini-automatici**: genera le proposte di riordino ogni N minuti
+  (`scheduler.minuti_intervallo_ordini`, default 60);
+- **sync-mexal**: sincronizza le giacenze una volta al giorno
+  (`scheduler.ora_sync_giornaliera`, default 02:00).
+
+Entrambi rispettano i rispettivi interruttori: se l'automatismo è spento, il job
+parte ma non fa nulla. L'avvio di Hangfire è protetto: se fallisce (es. DB non
+pronto), l'app web continua a funzionare e gli automatismi restano attivabili a
+mano. Il job viene eseguito nel processo IIS: per la massima affidabilità tenere
+l'application pool sempre attivo (oppure, in futuro, spostare i job in un servizio
+dedicato). La *dashboard* Hangfire è opzionale e richiede OWIN: per abilitarla
+aggiungere `app.UseHangfireDashboard("/hangfire")` nel proprio `Startup.vb`
+(file non incluso nel repo perché in `.gitignore`).
+
+## 5. Sincronizzazione Mexal (`/Brighetti_Sync`)
+
+Aggiorna le giacenze interne dal gestionale. È predisposta come sorgente
+*plug-in* (`IMexalSource`):
+
+- **CSV/file** (implementato): legge un file esportato da Mexal; colonne
+  riconosciute dall'intestazione (`Articolo`, `Magazzino`, `Giacenza/Quantità`).
+  Percorso e separatore si impostano nel pannello Automazioni.
+- **Import manuale**: dalla pagina si può caricare un CSV al volo.
+- **API/DB Mexal** (da definire): quando sarà nota la modalità, basterà
+  aggiungere una nuova implementazione di `IMexalSource` senza toccare il resto.
+
+## 6. Gestione lotti automatica
+
+- **Creazione automatica**: alla chiusura di una fase di lavorazione il sistema
+  crea un lotto (stato *In attesa*) con l'articolo/quantità versati
+  (interruttore *lotti – creazione automatica*).
+- **Sblocco su "Ritornato"**: quando un lotto passa a *Ritornato*, viene
+  sbloccata la fase successiva per gli articoli del lotto (interruttore
+  *lotti – ritornato sblocca fase*). Per prudenza lo sblocco avviene solo quando
+  è univoco (una sola attività bloccata per quel codice articolo); i casi
+  ambigui vengono annotati nel log e lasciati alla gestione manuale.
+
+## 7. Note e voci non incluse
+
+- **Workflow a fasi da tablet**, **export Excel lotti**, **stati lotto
+  Inviato/Ritornato**: già presenti nel sistema (verificati, vedi chat).
+- **Ordini ricorsivi per semilavorati**: coperti dal motore di riordino, che
+  considera anche i semilavorati (interruttore dedicato). La ricorsione basata
+  su distinta base (BOM) non è implementabile finché non esiste una distinta nel
+  modello dati.
+- **Cancellazione richieste aperte/chiuse**: è un'operazione sui dati di
+  produzione (tabelle `OrdiniInCorso`/`Ordini`), non una modifica di codice: va
+  eseguita sul DB, eventualmente con un comando dedicato da concordare.
+- **Lotto minimo per categoria/aggiornamenti massivi**, **tipi ODP
+  parziale/personalizzato**, **coda di lavoro per priorità**: non inclusi in
+  questa fase (richiedono ulteriori decisioni di processo).
