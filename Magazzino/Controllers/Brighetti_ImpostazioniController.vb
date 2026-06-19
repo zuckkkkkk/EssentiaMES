@@ -78,6 +78,51 @@ Namespace Controllers
             Return Json(New With {.ok = True, .nuovoStato = Not attuale})
         End Function
 
+        ' POST: assegna in blocco il lotto minimo a tutti gli articoli con un certo prefisso codice.
+        <HttpPost()>
+        <ValidateAntiForgeryToken()>
+        Function AggiornaLottoMinimoMassivo(ByVal prefisso As String, ByVal valore As Integer) As ActionResult
+            If String.IsNullOrWhiteSpace(prefisso) Then
+                TempData("Messaggio") = "Inserire un prefisso codice (es. G8)."
+                Return RedirectToAction("Index")
+            End If
+            Dim p = prefisso.Trim()
+            Dim opId = User.Identity.GetUserId()
+            Dim opName = User.Identity.GetUserName()
+            Dim articoli = db.Brighetti_Articoli.Where(Function(a) a.CodiceArticolo.StartsWith(p)).ToList()
+            For Each a In articoli
+                a.LottoMinimo = valore
+                a.UltimaModifica = New TipoUltimaModifica With {
+                    .Data = DateTime.Now, .OperatoreID = opId, .Operatore = opName
+                }
+            Next
+            db.SaveChanges()
+            TempData("Messaggio") = articoli.Count & " articoli con prefisso '" & p & "' aggiornati con lotto minimo " & valore & "."
+            Return RedirectToAction("Index")
+        End Function
+
+        ' POST: elimina tutte le richieste materiali aperte (OrdiniInCorso); mantiene lo storico (Ordini).
+        <HttpPost()>
+        <ValidateAntiForgeryToken()>
+        Function CancellaRichiesteAperte() As ActionResult
+            Dim opId = User.Identity.GetUserId()
+            Dim opName = User.Identity.GetUserName()
+            Dim aperte = db.OrdiniInCorso.ToList()
+            Dim n = aperte.Count
+            db.OrdiniInCorso.RemoveRange(aperte)
+            db.SaveChanges()
+            db.Audit.Add(New Audit With {
+                .Livello = TipoLogLivello.Warning,
+                .Indirizzo = "Brighetti_Impostazioni/CancellaRichiesteAperte",
+                .Messaggio = "Cancellate " & n & " richieste aperte (OrdiniInCorso). Storico (Ordini) mantenuto.",
+                .Dati = "",
+                .UltimaModifica = New TipoUltimaModifica With {.Data = DateTime.Now, .OperatoreID = opId, .Operatore = opName}
+            })
+            db.SaveChanges()
+            TempData("Messaggio") = n & " richieste aperte eliminate. Le richieste già inviate (storico) sono state mantenute."
+            Return RedirectToAction("Index")
+        End Function
+
         Protected Overrides Sub Dispose(ByVal disposing As Boolean)
             If (disposing) Then
                 db.Dispose()

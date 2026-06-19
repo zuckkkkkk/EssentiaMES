@@ -51,6 +51,37 @@ End Code
         </div>
     End Using
 
+    <div class="card" style="margin-bottom:18px;">
+        <div class="card-header"><strong>Manutenzione dati</strong></div>
+        <div class="card-body">
+            <h6>Lotto minimo di massa</h6>
+            <p class="text-muted">Imposta lo stesso lotto minimo a tutti gli articoli con un certo prefisso codice (es. tutti i G8 a 50).</p>
+            @Using (Html.BeginForm("AggiornaLottoMinimoMassivo", "Brighetti_Impostazioni"))
+                @Html.AntiForgeryToken()
+                @<div class="row">
+                    <div class="col-md-4">
+                        <input type="text" name="prefisso" class="form-control" placeholder="Prefisso codice (es. G8)" />
+                    </div>
+                    <div class="col-md-4">
+                        <input type="number" name="valore" class="form-control" placeholder="Lotto minimo" value="0" />
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-outline-primary">Applica a tutti</button>
+                    </div>
+                </div>
+            End Using
+
+            <hr />
+
+            <h6>Cancellazione richieste aperte</h6>
+            <p class="text-muted">Elimina tutte le richieste materiali ancora aperte/in sospeso (carrelli non inviati). Le richieste già inviate (storico) vengono mantenute.</p>
+            @Using (Html.BeginForm("CancellaRichiesteAperte", "Brighetti_Impostazioni", FormMethod.Post, New With {.onsubmit = "return confirm('Eliminare TUTTE le richieste aperte? Lo storico delle richieste inviate resta. Operazione non reversibile.');"}))
+                @Html.AntiForgeryToken()
+                @<button type="submit" class="btn btn-outline-danger">Elimina richieste aperte</button>
+            End Using
+        </div>
+    </div>
+
     <script>
         document.querySelectorAll('.toggle-automazione').forEach(function (el) {
             el.addEventListener('change', function () {

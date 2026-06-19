@@ -96,17 +96,26 @@ Aggiorna le giacenze interne dal gestionale. È predisposta come sorgente
   è univoco (una sola attività bloccata per quel codice articolo); i casi
   ambigui vengono annotati nel log e lasciati alla gestione manuale.
 
-## 7. Note e voci non incluse
+## 7. Manutenzione dati (pannello Automazioni)
+
+Nella pagina Automazioni è presente una sezione **Manutenzione dati**:
+
+- **Lotto minimo di massa**: assegna lo stesso lotto minimo a tutti gli articoli
+  con un certo prefisso codice (es. tutti i `G8` a 50, i `G12` a 100).
+- **Cancellazione richieste aperte**: elimina le richieste materiali aperte
+  (tabella `OrdiniInCorso`, i "carrelli" non inviati) mantenendo lo storico
+  delle richieste già inviate (`Ordini`). Operazione con conferma e tracciata a
+  log (Audit).
+
+## 8. Note e voci non incluse
 
 - **Workflow a fasi da tablet**, **export Excel lotti**, **stati lotto
-  Inviato/Ritornato**: già presenti nel sistema (verificati, vedi chat).
+  Inviato/Ritornato**, **avanzamento progressivo lavorazione→magazzino**: già
+  presenti e funzionanti (verificati). L'"ordine a catena" tra reparti è proprio
+  questo flusso progressivo, non richiede distinta base.
 - **Ordini ricorsivi per semilavorati**: coperti dal motore di riordino, che
-  considera anche i semilavorati (interruttore dedicato). La ricorsione basata
-  su distinta base (BOM) non è implementabile finché non esiste una distinta nel
-  modello dati.
-- **Cancellazione richieste aperte/chiuse**: è un'operazione sui dati di
-  produzione (tabelle `OrdiniInCorso`/`Ordini`), non una modifica di codice: va
-  eseguita sul DB, eventualmente con un comando dedicato da concordare.
-- **Lotto minimo per categoria/aggiornamenti massivi**, **tipi ODP
-  parziale/personalizzato**, **coda di lavoro per priorità**: non inclusi in
-  questa fase (richiedono ulteriori decisioni di processo).
+  considera anche i semilavorati (interruttore dedicato).
+- **Sincronizzazione Mexal reale (API/DB)**: sospesa per scelta; resta la
+  struttura plug-in (CSV/import manuale) spenta, pronta per il futuro.
+- **Tipi ODP parziale/personalizzato**, **coda di lavoro per priorità**: non
+  inclusi in questa fase (richiedono ulteriori decisioni di processo).
