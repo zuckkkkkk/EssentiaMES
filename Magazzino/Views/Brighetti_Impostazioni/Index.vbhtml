@@ -1,4 +1,4 @@
-@ModelType IEnumerable(Of Brighetti.ImpostazioniCategoriaViewModel)
+﻿@ModelType IEnumerable(Of Brighetti.ImpostazioniCategoriaViewModel)
 @Code
     ViewData("Title") = "Automazioni"
 End Code

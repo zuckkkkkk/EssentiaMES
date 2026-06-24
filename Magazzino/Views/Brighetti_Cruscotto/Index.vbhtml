@@ -1,4 +1,4 @@
-@ModelType Brighetti.CruscottoViewModel
+﻿@ModelType Brighetti.CruscottoViewModel
 @Code
     ViewData("Title") = "Centro di Controllo"
 End Code

@@ -171,7 +171,9 @@
     <Reference Include="System.Web.Entity" />
     <Reference Include="System.Web.ApplicationServices" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
-    <Reference Include="System.Core" />
+    <Reference Include="System.Core">
+      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Core.dll</HintPath>
+    </Reference>
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Web" />
@@ -444,6 +446,10 @@
       <DependentUpon>202310191030312_CSV.vb</DependentUpon>
     </Compile>
     <Compile Include="BrighettiModels\202310191030312_CSV.vb" />
+    <Compile Include="BrighettiModels\202606241320486_edit.Designer.vb">
+      <DependentUpon>202606241320486_edit.vb</DependentUpon>
+    </Compile>
+    <Compile Include="BrighettiModels\202606241320486_edit.vb" />
     <Compile Include="Controllers\AccountController.vb" />
     <Compile Include="Controllers\Brighetti_ArticoloController.vb" />
     <Compile Include="Controllers\Brighetti_CruscottoController.vb" />
@@ -622,6 +628,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="BrighettiModels\202310191030312_CSV.resx">
       <DependentUpon>202310191030312_CSV.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="BrighettiModels\202606241320486_edit.resx">
+      <DependentUpon>202606241320486_edit.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="IdentityMigrations\202302011306270_Init.resx">
       <DependentUpon>202302011306270_Init.vb</DependentUpon>

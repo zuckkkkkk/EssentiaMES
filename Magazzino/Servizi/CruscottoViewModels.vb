@@ -1,4 +1,4 @@
-Imports System.Collections.Generic
+﻿Imports System.Collections.Generic
 
 ''' <summary>Dati del Centro di Controllo (cruscotto): cosa richiede attenzione o è fermo.</summary>
 Public Class CruscottoViewModel

@@ -1,4 +1,4 @@
-@Code
+﻿@Code
     ViewData("Title") = "Sincronizzazione Mexal"
 End Code
 

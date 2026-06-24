@@ -1,4 +1,4 @@
-Imports System
+﻿Imports System
 Imports System.Collections.Generic
 Imports System.Data.Entity
 Imports System.Linq
@@ -26,8 +26,8 @@ Namespace Controllers
                 Function(a) a.StatoAttività <> TipoStatoAttività.Completato _
                         AndAlso a.StatoAttività <> TipoStatoAttività.Annullato).ToList()
 
-            vm.AttivitaStandBy = openAtt.Count(Function(a) a.StatoAttività = TipoStatoAttività.StandBy)
-            vm.AttivitaBloccate = openAtt.Count(Function(a) a.StatoAttività = TipoStatoAttività.BloccoDaAttivitàPrecedente)
+            vm.AttivitaStandBy = openAtt.Where(Function(a) a.StatoAttività = TipoStatoAttività.StandBy).Count
+            vm.AttivitaBloccate = openAtt.Where(Function(a) a.StatoAttività = TipoStatoAttività.BloccoDaAttivitàPrecedente).Count
 
             ' ODP fermi: hanno fasi bloccate ma nessuna fase avviabile/in corso.
             Dim stuckOdp = openAtt _
@@ -55,7 +55,7 @@ Namespace Controllers
             For Each r In reparti.OrderBy(Function(x) x.IdReparto)
                 vm.Flusso.Add(New CruscottoRepartoViewModel With {
                     .NomeReparto = r.NomeReparto,
-                    .Conteggio = attive.Count(Function(a) a.idReparto = r.IdReparto)
+                    .Conteggio = attive.Where(Function(a) a.idReparto = r.IdReparto).Count()
                 })
             Next
             vm.FlussoMax = If(vm.Flusso.Count > 0, Math.Max(1, vm.Flusso.Max(Function(x) x.Conteggio)), 1)

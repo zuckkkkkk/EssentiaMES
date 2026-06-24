@@ -1,4 +1,4 @@
-@ModelType IEnumerable(Of Brighetti.Brighetti_OrdineAutomatico)
+﻿@ModelType IEnumerable(Of Brighetti.Brighetti_OrdineAutomatico)
 @Code
     ViewData("Title") = "Ordini Automatici"
 End Code
