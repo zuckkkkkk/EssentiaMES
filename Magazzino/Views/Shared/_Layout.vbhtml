@@ -41,6 +41,9 @@
                     <div Class="col" style="display: flex; justify-content: center; align-items: center">
                         <a href="@Url.Action("AdminDashboard", "Macchine")"><i Class="fa-solid fa-house fa-2x @IIf(Html.ViewContext.RouteData.GetRequiredString("action") = "AdminDashboard", "fa-gradient", "fa-gradient-Not")"></i></a>
                     </div>
+                    <div Class="col" style="display: flex; justify-content: center; align-items: center">
+                        <a href="@Url.Action("Index", "Brighetti_Cruscotto")"><i Class="fa-solid fa-gauge-high fa-2x @IIf(Html.ViewContext.RouteData.GetRequiredString("controller") = "Brighetti_Cruscotto", "fa-gradient", "fa-gradient-Not")"></i></a>
+                    </div>
                     <div Class="col dropup" style="display: flex; justify-content: center;">
                         <btn><i Class="dropbtn fa-solid fa-cart-shopping fa-2x @IIf(Html.ViewContext.RouteData.GetRequiredString("controller") = "Brighetti_Articolo", "fa-gradient", "fa-gradient-Not")"></i></btn>
                         <div class="dropup-content">

@@ -65,12 +65,17 @@ Public Class OrdiniAutomaticiService
                     Continue For
                 End If
 
-                ' Evita doppioni: esiste già una proposta aperta per stesso articolo/magazzino?
-                Dim giaProposto = db.Brighetti_OrdiniAutomatici.Any(
+                ' Evita doppioni: salta se esiste già un ordine NON terminato per lo stesso
+                ' articolo/magazzino (Proposto, Confermato o Inviato). Così un ordine confermato
+                ' ma non ancora arrivato non viene riproposto a ogni giro. Si riproporrà solo
+                ' dopo che sarà stato segnato "Evaso" (o annullato).
+                Dim giaInCorso = db.Brighetti_OrdiniAutomatici.Any(
                     Function(o) o.CodiceArticolo = g.CodiceArticolo _
                             AndAlso o.CodiceMagazzino = g.CodiceMagazzino _
-                            AndAlso o.Stato = StatoOrdineAutomatico.Proposto)
-                If giaProposto Then
+                            AndAlso (o.Stato = StatoOrdineAutomatico.Proposto _
+                                  OrElse o.Stato = StatoOrdineAutomatico.Confermato _
+                                  OrElse o.Stato = StatoOrdineAutomatico.Inviato))
+                If giaInCorso Then
                     esito.Saltate += 1
                     Continue For
                 End If

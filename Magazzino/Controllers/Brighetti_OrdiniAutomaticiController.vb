@@ -56,6 +56,15 @@ Namespace Controllers
             Return RedirectToAction("Index")
         End Function
 
+        ' POST: segna un ordine come evaso (merce arrivata). Chiude il ciclo e
+        ' consente di riproporre l'articolo se in futuro tornerà sotto scorta.
+        <HttpPost()>
+        <ValidateAntiForgeryToken()>
+        Function Evaso(ByVal id As Integer) As ActionResult
+            CambiaStato(id, StatoOrdineAutomatico.Evaso)
+            Return RedirectToAction("Index")
+        End Function
+
         Private Sub CambiaStato(id As Integer, nuovoStato As StatoOrdineAutomatico)
             Dim ordine = db.Brighetti_OrdiniAutomatici.Find(id)
             If ordine Is Nothing Then Return

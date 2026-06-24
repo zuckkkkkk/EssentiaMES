@@ -446,6 +446,7 @@
     <Compile Include="BrighettiModels\202310191030312_CSV.vb" />
     <Compile Include="Controllers\AccountController.vb" />
     <Compile Include="Controllers\Brighetti_ArticoloController.vb" />
+    <Compile Include="Controllers\Brighetti_CruscottoController.vb" />
     <Compile Include="Controllers\Brighetti_GiacenzaController.vb" />
     <Compile Include="Controllers\Brighetti_ImpostazioniController.vb" />
     <Compile Include="Controllers\Brighetti_LottiController.vb" />
@@ -501,6 +502,7 @@
     </Compile>
     <Compile Include="Controllers\HomeController.vb" />
     <Compile Include="Costanti.vb" />
+    <Compile Include="Servizi\CruscottoViewModels.vb" />
     <Compile Include="Servizi\ImpostazioniService.vb" />
     <Compile Include="Servizi\LottiAutomaticiService.vb" />
     <Compile Include="Servizi\MexalSource.vb" />
@@ -738,6 +740,7 @@
     <Content Include="Views\Brighetti_Procedura\Index.vbhtml" />
     <Content Include="Views\Brighetti_Impostazioni\Index.vbhtml" />
     <Content Include="Views\Brighetti_OrdiniAutomatici\Index.vbhtml" />
+    <Content Include="Views\Brighetti_Cruscotto\Index.vbhtml" />
     <Content Include="Views\Brighetti_Sync\Index.vbhtml" />
     <Content Include="Views\Brighetti_Articolo\Create.vbhtml" />
     <Content Include="Views\Brighetti_Articolo\Delete.vbhtml" />

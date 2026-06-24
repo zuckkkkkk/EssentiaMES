@@ -424,11 +424,14 @@ Namespace Controllers
                             faseVersamento.QuantitàScartata = attività.QuantitàScartata
                             db.SaveChanges()
                         End If
-                        'Aprire la fase nuova
-                        Dim NextAct = db.Brighetti_Attività.Where(Function(x) x.CodiceArticolo = attività.CodiceArticolo And x.IncrementaleProcedura = attivitaSeguente.IncrementaleProcedura + 1).FirstOrDefault
-                        If Not IsNothing(NextAct) Then
-                            NextAct.StatoAttività = TipoStatoAttività.In_attesa
-                            db.SaveChanges()
+                        'Aprire la fase nuova (solo se esiste una fase successiva: evita
+                        'NullReference sull'ultima fase, p.es. nei cicli speciali "S")
+                        If Not IsNothing(attivitaSeguente) Then
+                            Dim NextAct = db.Brighetti_Attività.Where(Function(x) x.CodiceArticolo = attività.CodiceArticolo And x.IncrementaleProcedura = attivitaSeguente.IncrementaleProcedura + 1).FirstOrDefault
+                            If Not IsNothing(NextAct) Then
+                                NextAct.StatoAttività = TipoStatoAttività.In_attesa
+                                db.SaveChanges()
+                            End If
                         End If
                         'Creazione automatica del lotto alla chiusura della fase (se l'automatismo è attivo)
                         Try

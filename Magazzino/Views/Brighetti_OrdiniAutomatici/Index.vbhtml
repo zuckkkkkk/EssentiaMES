@@ -63,6 +63,8 @@ End Code
                             @<span class="badge bg-danger">Annullato</span>
                         Case StatoOrdineAutomatico.Inviato
                             @<span class="badge bg-primary">Inviato</span>
+                        Case StatoOrdineAutomatico.Evaso
+                            @<span class="badge bg-secondary">Evaso</span>
                     End Select
                 </td>
                 <td>
@@ -76,6 +78,12 @@ End Code
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@item.Id" />
                             <button type="submit" class="btn btn-sm btn-outline-danger">Annulla</button>
+                        </form>
+                    ElseIf item.Stato = StatoOrdineAutomatico.Confermato Then
+                        @<form action="@Url.Action("Evaso", "Brighetti_OrdiniAutomatici")" method="post" style="display:inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@item.Id" />
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">Segna evaso</button>
                         </form>
                     End If
                 </td>

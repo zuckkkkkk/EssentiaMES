@@ -546,6 +546,7 @@ Public Enum StatoOrdineAutomatico As Byte
     Confermato = 1
     Annullato = 2
     Inviato = 3
+    Evaso = 4
 End Enum
 '======================================================================================= VIEWMODEL
 Public Class Brighetti_Macchina_Viewmodel
