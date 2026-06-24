@@ -89,5 +89,24 @@ BEGIN
 END
 GO
 
+/* ---- Allineamento giacenze: CodiceArticolo da Id numerico a codice reale -----
+   Le giacenze storiche salvavano l'Id numerico dell'articolo nel campo
+   CodiceArticolo (il menu a tendina inviava l'Id). Le rendiamo coerenti col
+   codice reale, così diventano visibili al riordino automatico e si allineano
+   alle giacenze create dalla produzione. Idempotente: converte solo i valori
+   ancora numerici che corrispondono a un articolo esistente.
+   (Eseguire DOPO aver pubblicato il nuovo codice.)                            */
+IF OBJECT_ID('dbo.Brighetti_Giacenze', 'U') IS NOT NULL
+   AND OBJECT_ID('dbo.Brighetti_Articoli', 'U') IS NOT NULL
+BEGIN
+    UPDATE g
+       SET g.CodiceArticolo = a.CodiceArticolo
+      FROM dbo.Brighetti_Giacenze g
+      INNER JOIN dbo.Brighetti_Articoli a
+         ON TRY_CONVERT(INT, g.CodiceArticolo) = a.Id
+     WHERE TRY_CONVERT(INT, g.CodiceArticolo) IS NOT NULL;
+END
+GO
+
 PRINT 'Aggiornamento DB EssentiaMES completato.';
 GO

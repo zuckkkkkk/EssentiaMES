@@ -356,7 +356,7 @@ Namespace Controllers
                 OpName = User.Identity.GetUserName
                 If ModelState.IsValid Then
                     db.Brighetti_Giacenze.Add(New Brighetti_Giacenza With {
-                        .CodiceArticolo = brighetti_Giacenza.CodiceArticolo,
+                        .CodiceArticolo = RisolviCodiceArticolo(brighetti_Giacenza.CodiceArticolo),
                         .CodiceMagazzino = brighetti_Giacenza.CodiceMagazzino,
                         .QuantitàGiacenza = brighetti_Giacenza.QuantitàGiacenza,
                         .QuantitàSottoscorta = brighetti_Giacenza.QuantitàSottoscorta,
@@ -419,8 +419,9 @@ Namespace Controllers
                         Return Json(New With {.ok = False, .message = "Impossibile trovare l'articolo richiesto"})
                         db.SaveChanges()
                     End If
-                    If giacenza.CodiceArticolo <> brighetti_Giacenza.CodiceArticolo Then
-                        giacenza.CodiceArticolo = brighetti_Giacenza.CodiceArticolo
+                    Dim codiceArtRisolto = RisolviCodiceArticolo(brighetti_Giacenza.CodiceArticolo)
+                    If giacenza.CodiceArticolo <> codiceArtRisolto Then
+                        giacenza.CodiceArticolo = codiceArtRisolto
                         db.SaveChanges()
                     End If
                     If giacenza.CodiceMagazzino <> brighetti_Giacenza.CodiceMagazzino Then
@@ -509,6 +510,20 @@ Namespace Controllers
                 Case Else : Return Function(x) x.CodiceArticolo
             End Select
         End Function
+        ' Il menu a tendina invia l'Id articolo: lo convertiamo nel codice reale, così
+        ' le giacenze sono coerenti (codice) e visibili al riordino automatico e alla sync.
+        Private Function RisolviCodiceArticolo(valore As String) As String
+            If String.IsNullOrWhiteSpace(valore) Then Return valore
+            Dim id As Integer
+            If Integer.TryParse(valore, id) Then
+                Dim art = db.Brighetti_Articoli.Find(id)
+                If art IsNot Nothing AndAlso Not String.IsNullOrWhiteSpace(art.CodiceArticolo) Then
+                    Return art.CodiceArticolo
+                End If
+            End If
+            Return valore
+        End Function
+
         Protected Overrides Sub Dispose(ByVal disposing As Boolean)
             If (disposing) Then
                 db.Dispose()

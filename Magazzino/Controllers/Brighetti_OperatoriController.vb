@@ -359,6 +359,20 @@ Namespace Controllers
                         .TipoAttività = TipoTempoAttività.Lavorazione
                 })
                         db.SaveChanges()
+                        ' Quantità parziale: se non si raggiunge la quantità richiesta,
+                        ' l'attività resta aperta (torna In attesa) finché non è completata.
+                        If attività.QuantitàProdotta < attività.QuantitàdaProdurre Then
+                            attività.StatoAttività = TipoStatoAttività.In_attesa
+                            attività.UltimaModifica = New TipoUltimaModifica With {
+                                .Data = NowDate, .Operatore = OpName, .OperatoreID = OpID
+                            }
+                            db.SaveChanges()
+                            Return Json(New With {.ok = True,
+                                .message = "Quantità parziale registrata (" & attività.QuantitàProdotta.ToString & "/" & attività.QuantitàdaProdurre.ToString & "). L'attività resta aperta.",
+                                .pathRedirect = "/Brighetti_Operatori/AvvioMacchina"})
+                        End If
+                        ' Completamento atomico: spostamento giacenze e avanzamento fasi in transazione.
+                        Using tx = db.Database.BeginTransaction()
                         'Cancellare giacenza del magazzino precedente
                         Dim attivitaprecedente = db.Brighetti_Procedure.Where(Function(x) x.CodiceArticolo = attività.CodiceArticolo And x.IncrementaleProcedura = attività.IncrementaleProcedura - 1).FirstOrDefault
                         If Not IsNothing(attivitaprecedente) Then
@@ -379,15 +393,15 @@ Namespace Controllers
                         'Definire chiusa la fase
                         attività.StatoAttività = TipoStatoAttività.Completato
                         db.SaveChanges()
-                        'Se la giacenza non esiste, crearla
-                        Dim idArticolo = db.Brighetti_Articoli.Where(Function(X) X.CodiceArticolo = attività.CodiceArticolo).First.Id
+                        'Se la giacenza non esiste, crearla (chiave: CODICE articolo reale,
+                        'allineata alle altre giacenze e visibile a riordino/sync)
                         Dim attivitaSeguente = db.Brighetti_Procedure.Where(Function(x) x.CodiceArticolo = attività.CodiceArticolo And x.IncrementaleProcedura = attività.IncrementaleProcedura + 1).FirstOrDefault
                         If Not IsNothing(attivitaSeguente) Then
-                            Dim giacenza = db.Brighetti_Giacenze.Where(Function(x) x.CodiceArticolo = idArticolo.ToString And x.CodiceMagazzino = attivitaSeguente.idMacchinaMagazzino.ToString).FirstOrDefault
+                            Dim giacenza = db.Brighetti_Giacenze.Where(Function(x) x.CodiceArticolo = attività.CodiceArticolo And x.CodiceMagazzino = attivitaSeguente.idMacchinaMagazzino.ToString).FirstOrDefault
                             If IsNothing(giacenza) Then
                                 'Creare giacenza nel magazzino nuovo
                                 giacenza = db.Brighetti_Giacenze.Add(New Brighetti_Giacenza With {
-                                    .CodiceArticolo = idArticolo,
+                                    .CodiceArticolo = attività.CodiceArticolo,
                                     .CodiceMagazzino = attivitaSeguente.idMacchinaMagazzino,
                                     .InPrevisioneEntrata = 0,
                                     .QuantitàGiacenza = attività.QuantitàProdotta,
@@ -398,6 +412,10 @@ Namespace Controllers
                                         .Data = DateTime.Now
                                     }
                                 })
+                                db.SaveChanges()
+                            Else
+                                'La giacenza esiste: somma la quantita versata
+                                giacenza.QuantitàGiacenza = giacenza.QuantitàGiacenza + attività.QuantitàProdotta
                                 db.SaveChanges()
                             End If
                             'Aggiungere poi il dettaglio giacenza, necessario per i lotti
@@ -433,7 +451,9 @@ Namespace Controllers
                                 db.SaveChanges()
                             End If
                         End If
-                        'Creazione automatica del lotto alla chiusura della fase (se l'automatismo è attivo)
+                            tx.Commit()
+                        End Using
+                        'Creazione automatica del lotto (dopo il commit della transazione, se l'automatismo è attivo)
                         Try
                             LottiAutomaticiService.CreaLottoDaVersamento(attività.CodiceArticolo, attività.QuantitàProdotta, OpID, OpName)
                         Catch exLotto As Exception
@@ -442,13 +462,17 @@ Namespace Controllers
                 End Select
 
             Catch ex As Exception
-                db.Log.Add(New Log With {
-                 .Livello = TipoLogLivello.Warning,
-                 .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
-                 .Messaggio = "Errore apertura attività: " & vbNewLine & ex.Message,
-                 .Dati = "",
-                 .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = NowDate}})
-                db.SaveChanges()
+                ' Log su contesto separato: la transazione di sopra è già stata annullata,
+                ' così non ripersistiamo modifiche rimaste tracciate sul contesto principale.
+                Using logDb As New BrighettiModels
+                    logDb.Log.Add(New Log With {
+                     .Livello = TipoLogLivello.Warning,
+                     .Indirizzo = "Brighetti_Operatori/ConcludiAttività",
+                     .Messaggio = "Errore conclusione attività: " & vbNewLine & ex.Message,
+                     .Dati = "",
+                     .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = NowDate}})
+                    logDb.SaveChanges()
+                End Using
                 Return Json(New With {.ok = False, .message = "Errore nella conclusione attività"})
             End Try
             Return Json(New With {.ok = True, .message = "Attività conclusa correttamente", .pathRedirect = "/Brighetti_Operatori/AvvioMacchina"})

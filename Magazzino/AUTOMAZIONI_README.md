@@ -107,7 +107,23 @@ Nella pagina Automazioni è presente una sezione **Manutenzione dati**:
   delle richieste già inviate (`Ordini`). Operazione con conferma e tracciata a
   log (Audit).
 
-## 8. Note e voci non incluse
+## 8. Correzioni al flusso di produzione (verifica "niente lasciato indietro")
+
+- **Giacenze a codice articolo reale**: le giacenze ora usano il *codice* articolo
+  (non più l'Id numerico). Questo (a) fa funzionare il riordino automatico per
+  prefisso (es. `G8`), (b) rende visibili i semilavorati e (c) **risolve una perdita
+  di giacenza** tra magazzini intermedi (il vecchio confronto codice-vs-Id non
+  trovava mai la giacenza da scaricare). ⚠️ Lo script `AGGIORNAMENTO_DB.sql`
+  include una **migrazione una-tantum** che converte le giacenze esistenti da Id a
+  codice: va eseguito dopo aver pubblicato il nuovo codice.
+- **Quantità parziale**: se l'operatore conclude con meno della quantità richiesta,
+  la fase **non si chiude**: resta "in attesa" finché non si raggiunge la quantità
+  prevista. Niente pezzi persi.
+- **Chiusura fase in transazione**: `ConcludiAttività` ora è atomica — o tutti i
+  passaggi (scarico/carico giacenze, avanzamento fasi) vanno a buon fine, o si
+  annulla tutto. Niente ordini "a metà" in caso di errore.
+
+## 9. Note e voci non incluse
 
 - **Workflow a fasi da tablet**, **export Excel lotti**, **stati lotto
   Inviato/Ritornato**, **avanzamento progressivo lavorazione→magazzino**: già
