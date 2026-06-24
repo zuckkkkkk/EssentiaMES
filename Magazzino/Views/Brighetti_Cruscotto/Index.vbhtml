@@ -20,13 +20,19 @@ End Code
     .cruscotto .panel { background: #fff; border: 1px solid #ececec; border-radius: 14px; padding: 18px 20px; margin-bottom: 22px; }
     .cruscotto .panel h5 { font-weight: 700; margin-bottom: 4px; }
     .cruscotto .panel .hint { color: #95a5a6; font-size: .82rem; margin-bottom: 14px; }
-    .cruscotto .flow { display: flex; align-items: flex-end; gap: 4px; overflow-x: auto; padding: 8px 2px 0; }
-    .cruscotto .stage { min-width: 92px; flex: 1; text-align: center; position: relative; }
-    .cruscotto .stage .bar { margin: 0 auto; width: 38px; border-radius: 8px 8px 0 0; background: linear-gradient(180deg,#3d566e,#2c3e50); }
-    .cruscotto .stage.empty .bar { background: #dfe4e8; }
-    .cruscotto .stage .cnt { font-weight: 800; font-size: 1.15rem; margin-bottom: 4px; }
-    .cruscotto .stage .nm { font-size: .72rem; color: #5a6b7b; margin-top: 8px; line-height: 1.15; word-break: break-word; }
-    .cruscotto .stage .chev { position: absolute; right: -8px; bottom: 16px; color: #cdd6dd; }
+    .cruscotto .flow { display: flex; align-items: stretch; gap: 0; overflow-x: auto; padding: 6px 2px 2px; }
+    .cruscotto .stage { flex: 1 1 0; min-width: 104px; display: flex; align-items: stretch; }
+    .cruscotto .stage .card { flex: 1; background: #f7f9fa; border: 1px solid #e7ecef; border-radius: 12px; padding: 14px 10px 12px; text-align: center; display: flex; flex-direction: column; }
+    .cruscotto .stage .card .cnt { font-size: 1.6rem; font-weight: 800; color: #2c3e50; line-height: 1; }
+    .cruscotto .stage .card .nm { font-size: .72rem; color: #5a6b7b; margin-top: 8px; line-height: 1.15; min-height: 2.3em; display: flex; align-items: center; justify-content: center; word-break: break-word; }
+    .cruscotto .stage .card .load { height: 5px; border-radius: 3px; background: #e4e9ec; margin-top: 10px; overflow: hidden; }
+    .cruscotto .stage .card .load > span { display: block; height: 100%; background: linear-gradient(90deg,#3d566e,#2c3e50); border-radius: 3px; }
+    .cruscotto .stage.empty .card { opacity: .55; }
+    .cruscotto .stage.empty .card .cnt { color: #9aa7b1; }
+    .cruscotto .stage .arrow { color: #cdd6dd; align-self: center; padding: 0 6px; flex: 0 0 auto; }
+    .cruscotto .stage:last-child .arrow { display: none; }
+    .cruscotto .pager { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 12px; }
+    .cruscotto .pager span { color: #5a6b7b; font-weight: 600; font-size: .85rem; }
     .cruscotto table { width: 100%; }
     .cruscotto .empty-note { color: #27ae60; font-weight: 600; }
     .cruscotto .badge-fermo { background: #cf7a0c; }
@@ -35,7 +41,7 @@ End Code
 
 <div class="cruscotto">
     <h2>Centro di Controllo</h2>
-    <div class="sub">Tutto ciò che richiede attenzione, in un colpo d'occhio. Niente resta indietro.</div>
+    <div class="sub">Stato di produzione, scorte e ordini in un'unica pagina.</div>
 
     @If TempData("Messaggio") IsNot Nothing Then
         @<div class="alert alert-info">@TempData("Messaggio")</div>
@@ -81,10 +87,12 @@ End Code
             @<div class="flow">
                 @For Each stage In Model.Flusso
                     @<div class="stage @(If(stage.Conteggio = 0, "empty", ""))">
-                        <div class="cnt">@stage.Conteggio</div>
-                        <div class="bar" style="height:@(8 + CInt(stage.Conteggio / Model.FlussoMax * 80))px;"></div>
-                        <div class="nm">@stage.NomeReparto</div>
-                        <i class="fa-solid fa-chevron-right chev"></i>
+                        <div class="card">
+                            <div class="cnt">@stage.Conteggio</div>
+                            <div class="nm">@stage.NomeReparto</div>
+                            <div class="load"><span style="width:@(CInt(stage.Conteggio / Model.FlussoMax * 100))%;"></span></div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right arrow"></i>
                     </div>
                 Next
             </div>
@@ -102,8 +110,9 @@ End Code
                 @Html.AntiForgeryToken()
                 <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-rotate"></i> Genera proposte ora</button>
             </form>
-            <table class="table table-sm">
-                <tr><th>Articolo</th><th>Magazzino</th><th>Giacenza</th><th>In arrivo</th><th>Scorta min.</th></tr>
+            <table class="table table-sm paged" data-page-size="8">
+                <thead><tr><th>Articolo</th><th>Magazzino</th><th>Giacenza</th><th>In arrivo</th><th>Scorta min.</th></tr></thead>
+                <tbody>
                 @For Each g In Model.Scoperte
                     @<tr>
                         <td>@g.CodiceArticolo</td>
@@ -113,6 +122,7 @@ End Code
                         <td>@g.QuantitàSottoscorta</td>
                     </tr>
                 Next
+                </tbody>
             </table>
             </text>
         End If
@@ -124,8 +134,9 @@ End Code
         @If Model.AttivitaFerme Is Nothing OrElse Model.AttivitaFerme.Count = 0 Then
             @<div class="empty-note">Nessuna attività ferma.</div>
         Else
-            @<table class="table table-sm">
-                <tr><th>ODP</th><th>Articolo</th><th>Fase</th><th>Stato</th><th>Dal</th></tr>
+            @<table class="table table-sm paged" data-page-size="8">
+                <thead><tr><th>ODP</th><th>Articolo</th><th>Fase</th><th>Stato</th><th>Dal</th></tr></thead>
+                <tbody>
                 @For Each a In Model.AttivitaFerme
                     @<tr>
                         <td>@a.OrdineDiProduzione</td>
@@ -141,6 +152,7 @@ End Code
                         <td>@(If(a.UltimaModifica.Data.HasValue, a.UltimaModifica.Data.Value.ToString("dd/MM/yy HH:mm"), ""))</td>
                     </tr>
                 Next
+                </tbody>
             </table>
         End If
     </div>
@@ -151,8 +163,9 @@ End Code
         @If Model.LottiAperti Is Nothing OrElse Model.LottiAperti.Count = 0 Then
             @<div class="empty-note">Nessun lotto in sospeso.</div>
         Else
-            @<table class="table table-sm">
-                <tr><th>Lotto</th><th>ADL/ACL</th><th>Stato</th><th>Aggiornato</th><th></th></tr>
+            @<table class="table table-sm paged" data-page-size="8">
+                <thead><tr><th>Lotto</th><th>ADL/ACL</th><th>Stato</th><th>Aggiornato</th><th></th></tr></thead>
+                <tbody>
                 @For Each l In Model.LottiAperti
                     @<tr>
                         <td>@l.NomeLotto</td>
@@ -168,7 +181,46 @@ End Code
                         <td><a class="btn btn-sm btn-outline-secondary" href="@Url.Action("Index", "Brighetti_Lotti")">Apri</a></td>
                     </tr>
                 Next
+                </tbody>
             </table>
         End If
     </div>
 </div>
+
+<script>
+    // Paginazione client-side per le tabelle .paged (evita pagine lunghissime).
+    (function () {
+        function paginate(table) {
+            var size = parseInt(table.getAttribute('data-page-size') || '10', 10);
+            var rows = Array.prototype.slice.call(table.querySelectorAll('tbody > tr'));
+            if (rows.length <= size) return;
+            var pages = Math.ceil(rows.length / size), cur = 0;
+            var nav = document.createElement('div');
+            nav.className = 'pager';
+            var prev = document.createElement('button');
+            var next = document.createElement('button');
+            var info = document.createElement('span');
+            prev.type = next.type = 'button';
+            prev.className = next.className = 'btn btn-sm btn-outline-secondary';
+            prev.innerHTML = '&laquo; Prec.';
+            next.innerHTML = 'Succ. &raquo;';
+            function render() {
+                for (var i = 0; i < rows.length; i++) {
+                    rows[i].style.display = (i >= cur * size && i < (cur + 1) * size) ? '' : 'none';
+                }
+                info.textContent = (cur + 1) + ' / ' + pages + ' (' + rows.length + ' righe)';
+                prev.disabled = cur === 0;
+                next.disabled = cur === pages - 1;
+            }
+            prev.onclick = function () { if (cur > 0) { cur--; render(); } };
+            next.onclick = function () { if (cur < pages - 1) { cur++; render(); } };
+            nav.appendChild(prev);
+            nav.appendChild(info);
+            nav.appendChild(next);
+            table.parentNode.insertBefore(nav, table.nextSibling);
+            render();
+        }
+        var tables = document.querySelectorAll('table.paged');
+        for (var i = 0; i < tables.length; i++) { paginate(tables[i]); }
+    })();
+</script>
