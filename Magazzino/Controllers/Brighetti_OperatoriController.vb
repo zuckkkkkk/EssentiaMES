@@ -376,7 +376,7 @@ Namespace Controllers
                         'Cancellare giacenza del magazzino precedente
                         Dim attivitaprecedente = db.Brighetti_Procedure.Where(Function(x) x.CodiceArticolo = attività.CodiceArticolo And x.IncrementaleProcedura = attività.IncrementaleProcedura - 1).FirstOrDefault
                         If Not IsNothing(attivitaprecedente) Then
-                            Dim giacenza = db.Brighetti_Giacenze.Where(Function(x) x.CodiceArticolo = attività.CodiceArticolo And x.CodiceMagazzino = attivitaprecedente.idMacchinaMagazzino).FirstOrDefault
+                            Dim giacenza = db.Brighetti_Giacenze.Where(Function(x) x.CodiceArticolo = attività.CodiceArticolo And x.CodiceMagazzino = attivitaprecedente.idMacchinaMagazzino.ToString).FirstOrDefault
                             If Not IsNothing(giacenza) Then
                                 Dim elemGiacenza = giacenza.ListaQuantità.Where(Function(X) X.idProcedura = attivitaprecedente.IdProcedura).FirstOrDefault
                                 If Not IsNothing(elemGiacenza) Then
