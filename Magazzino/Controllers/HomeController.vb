@@ -22,8 +22,18 @@ Public Class HomeController
     End Function
     <Authorize(Roles:="Admin")>
     Function CancellaArticolo(ByVal id As Integer) As JsonResult
+        Dim OpID = User.Identity.GetUserId()
+        Dim OpName = User.Identity.GetUserName()
         Dim art = db.Articoli.Find(id)
         art.ArticoloCancellato = 1
+        db.SaveChanges()
+        db.Audit.Add(New Audit With {
+            .Livello = TipoAuditLivello.Warning,
+            .Indirizzo = "Home/CancellaArticolo",
+            .Messaggio = "Articolo eliminato (soft delete): " & art.Nome_Articolo & " (Id " & id & ")",
+            .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(New With {.Id = id, .Nome = art.Nome_Articolo}),
+            .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = DateTime.Now}
+        })
         db.SaveChanges()
         Return Json(New With {.ok = True})
     End Function
@@ -34,17 +44,33 @@ Public Class HomeController
         Try
             OpID = User.Identity.GetUserId()
             OpName = User.Identity.GetUserName()
-            db.Articoli.Add(New Articoli With {
+            Dim nuovoArticolo = New Articoli With {
                 .Descrizione_Articolo = DescrizioneArticolo,
                 .Nome_Articolo = CodiceArticolo,
                 .MagazzinoId = 1
+            }
+            db.Articoli.Add(nuovoArticolo)
+            db.SaveChanges()
+            db.Audit.Add(New Audit With {
+                .Livello = TipoAuditLivello.Info,
+                .Indirizzo = "Home/CreaArticolo",
+                .Messaggio = "Articolo creato: " & CodiceArticolo & " - " & DescrizioneArticolo,
+                .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(nuovoArticolo),
+                .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = DateTime.Now}
             })
             db.SaveChanges()
             Return Json(New With {.ok = True})
         Catch ex As Exception
-
+            db.Log.Add(New Log With {
+                .Livello = TipoLogLivello.Errors,
+                .Indirizzo = "Home/CreaArticolo",
+                .Messaggio = "Errore creazione articolo: " & ex.Message,
+                .Dati = "",
+                .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = DateTime.Now}
+            })
+            db.SaveChanges()
+            Return Json(New With {.ok = False})
         End Try
-        Return Json(New With {.ok = True})
     End Function
     <Authorize(Roles:="Admin")>
     Function MostraOrdine(ByVal id As String) As ActionResult
@@ -191,6 +217,7 @@ Public Class HomeController
         Dim OpID = vbNullString
         Dim OpName = vbNullString
         Dim listArticoli = "<ul>"
+        Dim ordiniCreati As New List(Of Integer)
         Try
             OpID = User.Identity.GetUserId()
             OpName = User.Identity.GetUserName()
@@ -212,42 +239,85 @@ Public Class HomeController
                     }
                 })
                 db.SaveChanges()
+                ordiniCreati.Add(l.IdArticolo)
                 db.OrdiniInCorso.Remove(l)
                 db.SaveChanges()
                 listArticoli = listArticoli + "<li>" + art.Nome_Articolo + " - q.tà " + l.QtaArticolo.ToString + "</li>"
             Next
             listArticoli = listArticoli + "</ul>"
-            Dim mySmtp As New SmtpClient
-            Dim myMail As New MailMessage()
-            mySmtp.UseDefaultCredentials = False
-            mySmtp.Credentials = New System.Net.NetworkCredential("hello@chefly.it", "Chefly2022!")
-            mySmtp.Host = "chefly.it"
-            myMail = New MailMessage()
-            myMail.From = New MailAddress("hello@chefly.it")
-            mySmtp.EnableSsl = False
-            Dim StrContent = ""
-            myMail.To.Add("mattiazucchini0601@gmail.com")
-            myMail.Subject = "Richiesta Materiali"
-            StrContent = "Ciao admin, <br> <br> qui di seguito trovi tutti gli articoli richiesti da '" + OpName + "'.<br>" + listArticoli + "Buon lavoro, <br>Mattia"
-            myMail.Body = StrContent.ToString
-            myMail.IsBodyHtml = True
-            mySmtp.Send(myMail)
+            db.Audit.Add(New Audit With {
+                .Livello = TipoAuditLivello.Info,
+                .Indirizzo = "Home/InviaRichiestaAmministratore",
+                .Messaggio = "Richiesta materiali inviata da " & OpName & " (ordine " & newIdOrdine & ", " & ordiniCreati.Count & " articoli)",
+                .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(New With {.IdOrdine = newIdOrdine, .Articoli = ordiniCreati}),
+                .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = DateTime.Now}
+            })
+            db.SaveChanges()
+            Try
+                Dim destinatario = System.Configuration.ConfigurationManager.AppSettings("Smtp.RichiesteMateriali.To")
+                If Not String.IsNullOrWhiteSpace(destinatario) Then
+                    Dim mySmtp As New SmtpClient
+                    mySmtp.UseDefaultCredentials = False
+                    mySmtp.Credentials = New System.Net.NetworkCredential(
+                        System.Configuration.ConfigurationManager.AppSettings("Smtp.User"),
+                        System.Configuration.ConfigurationManager.AppSettings("Smtp.Password"))
+                    mySmtp.Host = System.Configuration.ConfigurationManager.AppSettings("Smtp.Host")
+                    Dim myMail As New MailMessage()
+                    myMail.From = New MailAddress(System.Configuration.ConfigurationManager.AppSettings("Smtp.User"))
+                    mySmtp.EnableSsl = False
+                    myMail.To.Add(destinatario)
+                    myMail.Subject = "Richiesta Materiali"
+                    myMail.Body = "Ciao admin, <br> <br> qui di seguito trovi tutti gli articoli richiesti da '" + OpName + "'.<br>" + listArticoli + "Buon lavoro."
+                    myMail.IsBodyHtml = True
+                    mySmtp.Send(myMail)
+                Else
+                    db.Log.Add(New Log With {
+                        .Livello = TipoLogLivello.Warning,
+                        .Indirizzo = "Home/InviaRichiestaAmministratore",
+                        .Messaggio = "Notifica email non inviata: destinatario non configurato (appSettings 'Smtp.RichiesteMateriali.To').",
+                        .Dati = "",
+                        .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = DateTime.Now}
+                    })
+                    db.SaveChanges()
+                End If
+            Catch exMail As Exception
+                ' L'ordine è comunque stato registrato: un errore di invio email non deve
+                ' far credere all'operatore che la richiesta non sia stata salvata.
+                db.Log.Add(New Log With {
+                    .Livello = TipoLogLivello.Errors,
+                    .Indirizzo = "Home/InviaRichiestaAmministratore",
+                    .Messaggio = "Ordine registrato ma invio email di notifica fallito: " & exMail.Message,
+                    .Dati = "",
+                    .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = DateTime.Now}
+                })
+                db.SaveChanges()
+            End Try
             Return Json(New With {.ok = True})
         Catch ex As Exception
-
+            db.Log.Add(New Log With {
+                .Livello = TipoLogLivello.Errors,
+                .Indirizzo = "Home/InviaRichiestaAmministratore",
+                .Messaggio = "Errore invio richiesta materiali: " & ex.Message,
+                .Dati = "",
+                .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = DateTime.Now}
+            })
+            db.SaveChanges()
+            Return Json(New With {.ok = False, .message = "Errore nell'invio della richiesta materiali"})
         End Try
-        Return Json(New With {.ok = True})
     End Function
+    <Authorize(Roles:="Admin")>
     Public Function InvioMail(typemail As Boolean)
         Dim mySmtp As New SmtpClient
         Dim myMail As New MailMessage()
         mySmtp.UseDefaultCredentials = False
-        mySmtp.Credentials = New System.Net.NetworkCredential("no-reply@chefly.it", "egz3391C_")
-        mySmtp.Host = "mail.chefly.it"
+        mySmtp.Credentials = New System.Net.NetworkCredential(
+            System.Configuration.ConfigurationManager.AppSettings("Smtp.NoReply.User"),
+            System.Configuration.ConfigurationManager.AppSettings("Smtp.NoReply.Password"))
+        mySmtp.Host = System.Configuration.ConfigurationManager.AppSettings("Smtp.NoReply.Host")
         myMail = New MailMessage()
-        myMail.From = New MailAddress("no-reply@chefly.it")
+        myMail.From = New MailAddress(System.Configuration.ConfigurationManager.AppSettings("Smtp.NoReply.User"))
         Dim StrContent = ""
-        myMail.To.Add("mattiazucchini0601@gmail.com")
+        myMail.To.Add(System.Configuration.ConfigurationManager.AppSettings("Smtp.RichiesteMateriali.To"))
         myMail.Subject = "Richiesta Materiali"
         Using reader = New StreamReader(AppDomain.CurrentDomain.BaseDirectory + "Views/Shared/NuovoAccount.html")
             Dim readFile As String = reader.ReadToEnd()

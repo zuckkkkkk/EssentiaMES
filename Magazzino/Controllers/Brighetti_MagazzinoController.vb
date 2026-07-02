@@ -59,6 +59,14 @@ Namespace Controllers
                         }
                     })
                     db.SaveChanges()
+                    db.Audit.Add(New Audit With {
+                        .Livello = TipoAuditLivello.Info,
+                        .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                        .Messaggio = "Magazzino creato: " & brighetti_Magazzino.CodiceMagazzino,
+                        .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(brighetti_Magazzino),
+                        .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = Opid, .Operatore = OpName, .Data = DateTime.Now}
+                    })
+                    db.SaveChanges()
                     Return Json(New With {.ok = True, .message = "Magazzino correttamente inserito"})
                 End If
                 Return Json(New With {.ok = False, .message = "Errore nella creazione Magazzino"})
@@ -114,6 +122,14 @@ Namespace Controllers
                         .OperatoreID = OpID
                     }
                     db.SaveChanges()
+                    db.Audit.Add(New Audit With {
+                        .Livello = TipoAuditLivello.Info,
+                        .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                        .Messaggio = "Magazzino modificato: " & mag.CodiceMagazzino & " (Id " & mag.Id & ")",
+                        .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(brighetti_Magazzino),
+                        .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = DateTime.Now}
+                    })
+                    db.SaveChanges()
                     Return Json(New With {.ok = True, .message = "Magazzino correttamente modificato"})
                 End If
                 Return Json(New With {.ok = False, .message = "Errore nella modifica magazzino"})
@@ -152,7 +168,16 @@ Namespace Controllers
                 OpID = User.Identity.GetUserId
                 OpName = User.Identity.GetUserName
                 Dim Mag As Brighetti_Magazzino = db.Brighetti_Magazzini.Find(id)
+                Dim codiceMagazzino = Mag.CodiceMagazzino
                 db.Brighetti_Magazzini.Remove(Mag)
+                db.SaveChanges()
+                db.Audit.Add(New Audit With {
+                    .Livello = TipoAuditLivello.Warning,
+                    .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                    .Messaggio = "Magazzino eliminato: " & codiceMagazzino & " (Id " & id & ")",
+                    .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(New With {.Id = id, .CodiceMagazzino = codiceMagazzino}),
+                    .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = DateTime.Now}
+                })
                 db.SaveChanges()
                 Return Json(New With {.ok = True, .message = "Cancellazione Magazzino confermata correttamente"})
             Catch ex As Exception

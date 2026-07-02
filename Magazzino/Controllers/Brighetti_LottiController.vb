@@ -80,11 +80,38 @@ Namespace Controllers
         <HttpPost()>
         <ValidateAntiForgeryToken()>
         Function Create(<Bind(Include:="IdLotto,NomeLotto,DescrizioneLotto,CodiceADLACL,UltimaModifica")> ByVal brighetti_Lotti As Brighetti_Lotti) As ActionResult
-            If ModelState.IsValid Then
-                db.Brighetti_Lotti.Add(brighetti_Lotti)
+            Dim OpID = vbNullString
+            Dim OpName = vbNullString
+            Try
+                OpID = User.Identity.GetUserId()
+                OpName = User.Identity.GetUserName()
+                If ModelState.IsValid Then
+                    brighetti_Lotti.UltimaModifica = New TipoUltimaModifica With {
+                        .Data = DateTime.Now, .Operatore = OpName, .OperatoreID = OpID
+                    }
+                    db.Brighetti_Lotti.Add(brighetti_Lotti)
+                    db.SaveChanges()
+                    db.Audit.Add(New Audit With {
+                        .Livello = TipoAuditLivello.Info,
+                        .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                        .Messaggio = "Lotto creato: " & brighetti_Lotti.NomeLotto & " (Id " & brighetti_Lotti.IdLotto & ")",
+                        .Dati = JsonConvert.SerializeObject(brighetti_Lotti),
+                        .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = DateTime.Now}
+                    })
+                    db.SaveChanges()
+                    Return RedirectToAction("Index")
+                End If
+            Catch ex As Exception
+                db.Log.Add(New Log With {
+                    .Livello = TipoLogLivello.Errors,
+                    .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                    .Messaggio = "Errore creazione lotto: " & ex.Message,
+                    .Dati = "",
+                    .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = DateTime.Now}
+                })
                 db.SaveChanges()
-                Return RedirectToAction("Index")
-            End If
+                ModelState.AddModelError("", "Errore durante la creazione del lotto.")
+            End Try
             Return View(brighetti_Lotti)
         End Function
 
@@ -242,9 +269,33 @@ Namespace Controllers
         <ActionName("Delete")>
         <ValidateAntiForgeryToken()>
         Function DeleteConfirmed(ByVal id As Integer) As ActionResult
-            Dim brighetti_Lotti As Brighetti_Lotti = db.Brighetti_Lotti.Find(id)
-            db.Brighetti_Lotti.Remove(brighetti_Lotti)
-            db.SaveChanges()
+            Dim OpID = vbNullString
+            Dim OpName = vbNullString
+            Try
+                OpID = User.Identity.GetUserId()
+                OpName = User.Identity.GetUserName()
+                Dim brighetti_Lotti As Brighetti_Lotti = db.Brighetti_Lotti.Find(id)
+                Dim nomeLotto = brighetti_Lotti.NomeLotto
+                db.Brighetti_Lotti.Remove(brighetti_Lotti)
+                db.SaveChanges()
+                db.Audit.Add(New Audit With {
+                    .Livello = TipoAuditLivello.Warning,
+                    .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                    .Messaggio = "Lotto eliminato: " & nomeLotto & " (Id " & id & ")",
+                    .Dati = JsonConvert.SerializeObject(New With {.Id = id, .NomeLotto = nomeLotto}),
+                    .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = DateTime.Now}
+                })
+                db.SaveChanges()
+            Catch ex As Exception
+                db.Log.Add(New Log With {
+                    .Livello = TipoLogLivello.Errors,
+                    .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                    .Messaggio = "Errore eliminazione lotto (Id " & id & "): " & ex.Message,
+                    .Dati = "",
+                    .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = DateTime.Now}
+                })
+                db.SaveChanges()
+            End Try
             Return RedirectToAction("Index")
         End Function
         Function ListaArticoli(ByVal id As Integer) As ActionResult

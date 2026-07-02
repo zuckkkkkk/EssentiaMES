@@ -327,6 +327,14 @@ Namespace Controllers
                         End If
 
                     Next
+                    db.Audit.Add(New Audit With {
+                        .Livello = TipoAuditLivello.Info,
+                        .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                        .Messaggio = "ODP creato per articolo " & art.CodiceArticolo & ", quantità " & CreaOdpViewModel.Qta.ToString(),
+                        .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(CreaOdpViewModel),
+                        .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = Opid, .Operatore = OpName, .Data = DateTime.Now}
+                    })
+                    db.SaveChanges()
                     Return Json(New With {.ok = True, .message = "ODP Creato Correttamente"})
                 End If
                 Return Json(New With {.ok = False, .message = "Errore creazione ODP"})
@@ -366,6 +374,14 @@ Namespace Controllers
                         .Operatore = OpName,
                         .OperatoreID = Opid
                     }
+                    })
+                    db.SaveChanges()
+                    db.Audit.Add(New Audit With {
+                        .Livello = TipoAuditLivello.Info,
+                        .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                        .Messaggio = "Giacenza creata: articolo " & brighetti_Giacenza.CodiceArticolo & ", magazzino " & brighetti_Giacenza.CodiceMagazzino,
+                        .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(brighetti_Giacenza),
+                        .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = Opid, .Operatore = OpName, .Data = DateTime.Now}
                     })
                     db.SaveChanges()
                     Return Json(New With {.ok = True, .message = "Giacenza correttamente inserita"})
@@ -446,6 +462,14 @@ Namespace Controllers
                         .OperatoreID = OpID
                     }
                     db.SaveChanges()
+                    db.Audit.Add(New Audit With {
+                        .Livello = TipoAuditLivello.Info,
+                        .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                        .Messaggio = "Giacenza modificata: articolo " & giacenza.CodiceArticolo & ", magazzino " & giacenza.CodiceMagazzino & " (Id " & giacenza.Id & ")",
+                        .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(brighetti_Giacenza),
+                        .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = DateTime.Now}
+                    })
+                    db.SaveChanges()
                     Return Json(New With {.ok = True, .message = "Giacenza correttamente aggiornata"})
                 End If
             Catch ex As Exception
@@ -483,7 +507,17 @@ Namespace Controllers
                 OpID = User.Identity.GetUserId
                 OpName = User.Identity.GetUserName
                 Dim brighetti_Giacenza As Brighetti_Giacenza = db.Brighetti_Giacenze.Find(id)
+                Dim codiceArticolo = brighetti_Giacenza.CodiceArticolo
+                Dim codiceMagazzino = brighetti_Giacenza.CodiceMagazzino
                 db.Brighetti_Giacenze.Remove(brighetti_Giacenza)
+                db.SaveChanges()
+                db.Audit.Add(New Audit With {
+                    .Livello = TipoAuditLivello.Warning,
+                    .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                    .Messaggio = "Giacenza eliminata: articolo " & codiceArticolo & ", magazzino " & codiceMagazzino & " (Id " & id & ")",
+                    .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(New With {.Id = id, .CodiceArticolo = codiceArticolo, .CodiceMagazzino = codiceMagazzino}),
+                    .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = DateTime.Now}
+                })
                 db.SaveChanges()
                 Return Json(New With {.ok = True, .message = "Cancellazione giacenza confermata correttamente"})
             Catch ex As Exception

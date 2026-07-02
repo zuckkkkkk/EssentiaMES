@@ -56,6 +56,14 @@ Namespace Controllers
                 End If
             Next
             db.SaveChanges()
+            db.Audit.Add(New Audit With {
+                .Livello = TipoAuditLivello.Info,
+                .Indirizzo = "Brighetti_Impostazioni/Salva",
+                .Messaggio = "Impostazioni (parametri testuali/numerici) salvate.",
+                .Dati = "",
+                .UltimaModifica = New TipoUltimaModifica With {.Data = DateTime.Now, .OperatoreID = opId, .Operatore = opName}
+            })
+            db.SaveChanges()
             TempData("Messaggio") = "Impostazioni salvate."
             Return RedirectToAction("Index")
         End Function
@@ -63,6 +71,8 @@ Namespace Controllers
         ' POST AJAX: attiva/disattiva un singolo interruttore (un automatismo alla volta).
         <HttpPost()>
         Function Toggle(ByVal id As Integer) As JsonResult
+            Dim opId = User.Identity.GetUserId()
+            Dim opName = User.Identity.GetUserName()
             Dim imp = db.Brighetti_Impostazioni.Find(id)
             If imp Is Nothing Then
                 Return Json(New With {.ok = False, .messaggio = "Impostazione non trovata"})
@@ -71,9 +81,17 @@ Namespace Controllers
             imp.Valore = If(attuale, "false", "true")
             imp.UltimaModifica = New TipoUltimaModifica With {
                 .Data = DateTime.Now,
-                .OperatoreID = User.Identity.GetUserId(),
-                .Operatore = User.Identity.GetUserName()
+                .OperatoreID = opId,
+                .Operatore = opName
             }
+            db.SaveChanges()
+            db.Audit.Add(New Audit With {
+                .Livello = TipoAuditLivello.Warning,
+                .Indirizzo = "Brighetti_Impostazioni/Toggle",
+                .Messaggio = "Interruttore '" & imp.Chiave & "' impostato su " & If(Not attuale, "ATTIVO", "SPENTO"),
+                .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(New With {.Chiave = imp.Chiave, .NuovoStato = Not attuale}),
+                .UltimaModifica = New TipoUltimaModifica With {.Data = DateTime.Now, .OperatoreID = opId, .Operatore = opName}
+            })
             db.SaveChanges()
             Return Json(New With {.ok = True, .nuovoStato = Not attuale})
         End Function
@@ -96,6 +114,14 @@ Namespace Controllers
                     .Data = DateTime.Now, .OperatoreID = opId, .Operatore = opName
                 }
             Next
+            db.SaveChanges()
+            db.Audit.Add(New Audit With {
+                .Livello = TipoAuditLivello.Warning,
+                .Indirizzo = "Brighetti_Impostazioni/AggiornaLottoMinimoMassivo",
+                .Messaggio = articoli.Count & " articoli con prefisso '" & p & "' aggiornati con lotto minimo " & valore & ".",
+                .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(New With {.Prefisso = p, .Valore = valore, .Conteggio = articoli.Count}),
+                .UltimaModifica = New TipoUltimaModifica With {.Data = DateTime.Now, .OperatoreID = opId, .Operatore = opName}
+            })
             db.SaveChanges()
             TempData("Messaggio") = articoli.Count & " articoli con prefisso '" & p & "' aggiornati con lotto minimo " & valore & "."
             Return RedirectToAction("Index")

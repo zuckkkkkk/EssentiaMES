@@ -123,6 +123,7 @@ Namespace Controllers
         'Per altri dettagli, vedere https://go.microsoft.com/fwlink/?LinkId=317598.
         <HttpPost()>
         <ValidateAntiForgeryToken()>
+        <Authorize>
         Function ApriAttività(<Bind(Include:="IdAttività,StatoAttivita")> ByVal brighetti_Attività As Brighetti_Attività, ByVal StatoAttivita As Integer) As ActionResult
             Dim OpID = vbNullString
             Dim OpName = vbNullString
@@ -164,8 +165,9 @@ Namespace Controllers
             End Try
             Return Json(New With {.ok = True, .message = "Attività correttamente aperta", .pathRedirect = "/Brighetti_Operatori/AvvioMacchina"})
         End Function
-        '<HttpPost()>
-        '<ValidateAntiForgeryToken()>
+        <HttpPost()>
+        <ValidateAntiForgeryToken()>
+        <Authorize>
         Function ApriAttrezzaggio(<Bind(Include:="IdAttività")> ByVal brighetti_Attività As Brighetti_Attività) As ActionResult
             Dim OpID = vbNullString
             Dim OpName = vbNullString
@@ -234,6 +236,7 @@ Namespace Controllers
 
         <HttpPost()>
         <ValidateAntiForgeryToken()>
+        <Authorize>
         Function SospendiAttività(<Bind(Include:="IdAttività,QuantitàProdotta,QuantitàScartata")> ByVal brighetti_Attività As Brighetti_Attività) As ActionResult
             Dim OpID = vbNullString
             Dim OpName = vbNullString
@@ -320,6 +323,7 @@ Namespace Controllers
         End Function
         <HttpPost()>
         <ValidateAntiForgeryToken()>
+        <Authorize>
         Function ConcludiAttività(<Bind(Include:="IdAttività,QuantitàProdotta,QuantitàScartata")> ByVal brighetti_Attività As Brighetti_Attività) As ActionResult
             Dim OpID = vbNullString
             Dim OpName = vbNullString
@@ -348,6 +352,16 @@ Namespace Controllers
                 })
                         db.SaveChanges()
                         attività.StatoAttività = TipoStatoAttività.In_Lavorazione
+                        attività.UltimaModifica = New TipoUltimaModifica With {
+                            .Data = NowDate, .Operatore = OpName, .OperatoreID = OpID
+                        }
+                        db.SaveChanges()
+                        db.Audit.Add(New Audit With {
+                            .Livello = TipoAuditLivello.Info,
+                            .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                            .Messaggio = "Attrezzaggio concluso, avvio lavorazione: attività " & attività.IdAttività.ToString(),
+                            .Dati = JsonConvert.SerializeObject(New With {.IdAttività = attività.IdAttività, .CodiceArticolo = attività.CodiceArticolo}),
+                            .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = NowDate}})
                         db.SaveChanges()
                         '======================================= CASE STATO IN LAVORAZIONE
                     Case TipoStatoAttività.In_Lavorazione
@@ -366,6 +380,13 @@ Namespace Controllers
                             attività.UltimaModifica = New TipoUltimaModifica With {
                                 .Data = NowDate, .Operatore = OpName, .OperatoreID = OpID
                             }
+                            db.SaveChanges()
+                            db.Audit.Add(New Audit With {
+                                .Livello = TipoAuditLivello.Info,
+                                .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                                .Messaggio = "Quantità parziale registrata su attività " & attività.IdAttività.ToString() & " (" & attività.QuantitàProdotta.ToString() & "/" & attività.QuantitàdaProdurre.ToString() & "), scarti: " & attività.QuantitàScartata.ToString(),
+                                .Dati = JsonConvert.SerializeObject(New With {.IdAttività = attività.IdAttività, .CodiceArticolo = attività.CodiceArticolo, .QuantitàProdotta = attività.QuantitàProdotta, .QuantitàScartata = attività.QuantitàScartata, .QuantitàdaProdurre = attività.QuantitàdaProdurre}),
+                                .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = NowDate}})
                             db.SaveChanges()
                             Return Json(New With {.ok = True,
                                 .message = "Quantità parziale registrata (" & attività.QuantitàProdotta.ToString & "/" & attività.QuantitàdaProdurre.ToString & "). L'attività resta aperta.",
@@ -459,6 +480,16 @@ Namespace Controllers
                         Catch exLotto As Exception
                             'Un errore nella creazione del lotto non deve bloccare la chiusura dell'attività.
                         End Try
+                        db.Audit.Add(New Audit With {
+                            .Livello = TipoAuditLivello.Info,
+                            .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                            .Messaggio = "Attività conclusa: " & attività.IdAttività.ToString() & " - articolo " & attività.CodiceArticolo & ", prodotti: " & attività.QuantitàProdotta.ToString() & ", scarti: " & attività.QuantitàScartata.ToString(),
+                            .Dati = JsonConvert.SerializeObject(New With {.IdAttività = attività.IdAttività, .CodiceArticolo = attività.CodiceArticolo, .QuantitàProdotta = attività.QuantitàProdotta, .QuantitàScartata = attività.QuantitàScartata}),
+                            .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = NowDate}})
+                        db.SaveChanges()
+                    Case Else
+                        ' Stato non gestito (es. attività già Completata/Annullata): non si finge un successo.
+                        Return Json(New With {.ok = False, .message = "Impossibile concludere: l'attività non è in Attrezzaggio o Lavorazione (stato attuale: " & attività.StatoAttività.ToString() & ")."})
                 End Select
 
             Catch ex As Exception

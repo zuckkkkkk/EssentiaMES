@@ -33,10 +33,32 @@ Namespace Controllers
         <HttpPost()>
         <ValidateAntiForgeryToken()>
         Function Genera() As ActionResult
-            Dim esito = OrdiniAutomaticiService.GeneraProposte(
-                User.Identity.GetUserId(), User.Identity.GetUserName(),
-                rispettaToggle:=False, origine:="Manuale")
-            TempData("Messaggio") = esito.Messaggio
+            Dim opID = User.Identity.GetUserId()
+            Dim opName = User.Identity.GetUserName()
+            Try
+                Dim esito = OrdiniAutomaticiService.GeneraProposte(
+                    opID, opName,
+                    rispettaToggle:=False, origine:="Manuale")
+                TempData("Messaggio") = esito.Messaggio
+                db.Audit.Add(New Audit With {
+                    .Livello = TipoAuditLivello.Info,
+                    .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                    .Messaggio = "Generazione manuale proposte di riordino: " & esito.Messaggio,
+                    .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(esito),
+                    .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = opID, .Operatore = opName, .Data = DateTime.Now}
+                })
+                db.SaveChanges()
+            Catch ex As Exception
+                db.Log.Add(New Log With {
+                    .Livello = TipoLogLivello.Errors,
+                    .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                    .Messaggio = "Errore generazione manuale proposte di riordino: " & ex.Message,
+                    .Dati = "",
+                    .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = opID, .Operatore = opName, .Data = DateTime.Now}
+                })
+                db.SaveChanges()
+                TempData("Messaggio") = "Errore durante la generazione delle proposte."
+            End Try
             Return RedirectToAction("Index")
         End Function
 
@@ -44,7 +66,7 @@ Namespace Controllers
         <HttpPost()>
         <ValidateAntiForgeryToken()>
         Function Conferma(ByVal id As Integer) As ActionResult
-            CambiaStato(id, StatoOrdineAutomatico.Confermato)
+            CambiaStato(id, StatoOrdineAutomatico.Confermato, "Proposta di riordino confermata")
             Return RedirectToAction("Index")
         End Function
 
@@ -52,7 +74,7 @@ Namespace Controllers
         <HttpPost()>
         <ValidateAntiForgeryToken()>
         Function Annulla(ByVal id As Integer) As ActionResult
-            CambiaStato(id, StatoOrdineAutomatico.Annullato)
+            CambiaStato(id, StatoOrdineAutomatico.Annullato, "Proposta di riordino annullata")
             Return RedirectToAction("Index")
         End Function
 
@@ -61,20 +83,46 @@ Namespace Controllers
         <HttpPost()>
         <ValidateAntiForgeryToken()>
         Function Evaso(ByVal id As Integer) As ActionResult
-            CambiaStato(id, StatoOrdineAutomatico.Evaso)
+            CambiaStato(id, StatoOrdineAutomatico.Evaso, "Ordine di riordino segnato come evaso")
             Return RedirectToAction("Index")
         End Function
 
-        Private Sub CambiaStato(id As Integer, nuovoStato As StatoOrdineAutomatico)
-            Dim ordine = db.Brighetti_OrdiniAutomatici.Find(id)
-            If ordine Is Nothing Then Return
-            ordine.Stato = nuovoStato
-            ordine.UltimaModifica = New TipoUltimaModifica With {
-                .Data = DateTime.Now,
-                .OperatoreID = User.Identity.GetUserId(),
-                .Operatore = User.Identity.GetUserName()
-            }
-            db.SaveChanges()
+        Private Sub CambiaStato(id As Integer, nuovoStato As StatoOrdineAutomatico, messaggioAudit As String)
+            Dim opID = User.Identity.GetUserId()
+            Dim opName = User.Identity.GetUserName()
+            Try
+                Dim ordine = db.Brighetti_OrdiniAutomatici.Find(id)
+                If ordine Is Nothing Then
+                    TempData("Messaggio") = "Proposta di riordino non trovata (Id " & id & ")."
+                    Return
+                End If
+                Dim statoPrecedente = ordine.Stato
+                ordine.Stato = nuovoStato
+                ordine.UltimaModifica = New TipoUltimaModifica With {
+                    .Data = DateTime.Now,
+                    .OperatoreID = opID,
+                    .Operatore = opName
+                }
+                db.SaveChanges()
+                db.Audit.Add(New Audit With {
+                    .Livello = TipoAuditLivello.Info,
+                    .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                    .Messaggio = messaggioAudit & " (Id " & id & ", articolo " & ordine.CodiceArticolo & ")",
+                    .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(New With {.Id = id, .StatoPrecedente = statoPrecedente, .StatoNuovo = nuovoStato}),
+                    .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = opID, .Operatore = opName, .Data = DateTime.Now}
+                })
+                db.SaveChanges()
+            Catch ex As Exception
+                db.Log.Add(New Log With {
+                    .Livello = TipoLogLivello.Errors,
+                    .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                    .Messaggio = "Errore cambio stato ordine automatico (Id " & id & "): " & ex.Message,
+                    .Dati = "",
+                    .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = opID, .Operatore = opName, .Data = DateTime.Now}
+                })
+                db.SaveChanges()
+                TempData("Messaggio") = "Errore durante l'aggiornamento della proposta di riordino."
+            End Try
         End Sub
 
         Protected Overrides Sub Dispose(ByVal disposing As Boolean)

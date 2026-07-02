@@ -681,6 +681,14 @@ Namespace Controllers
                             End Select
                         End If
                     End If
+                    db.Audit.Add(New Audit With {
+                        .Livello = TipoAuditLivello.Info,
+                        .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                        .Messaggio = "Articolo creato: " & brighetti_Articolo.CodiceArticolo & " - " & brighetti_Articolo.DescrizioneArticolo,
+                        .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(brighetti_Articolo),
+                        .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = Opid, .Operatore = OpName, .Data = DateTime.Now}
+                    })
+                    db.SaveChanges()
                     Return Json(New With {.ok = True, .message = "Articolo correttamente inserito"})
                 End If
                 Return Json(New With {.ok = False, .message = "Errore nella creazione articolo"})
@@ -758,6 +766,14 @@ Namespace Controllers
                     .OperatoreID = OpID
                 }
                 db.SaveChanges()
+                db.Audit.Add(New Audit With {
+                    .Livello = TipoAuditLivello.Info,
+                    .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                    .Messaggio = "Articolo modificato: " & art.CodiceArticolo & " (Id " & art.Id & ")",
+                    .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(brighetti_Articolo),
+                    .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = DateTime.Now}
+                })
+                db.SaveChanges()
             Catch ex As Exception
                 db.Log.Add(New Log With {
                  .Livello = TipoLogLivello.Warning,
@@ -793,7 +809,16 @@ Namespace Controllers
                 OpID = User.Identity.GetUserId
                 OpName = User.Identity.GetUserName
                 Dim brighetti_Articolo As Brighetti_Articolo = db.Brighetti_Articoli.Find(id)
+                Dim codiceArticolo = brighetti_Articolo.CodiceArticolo
                 db.Brighetti_Articoli.Remove(brighetti_Articolo)
+                db.SaveChanges()
+                db.Audit.Add(New Audit With {
+                    .Livello = TipoAuditLivello.Warning,
+                    .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                    .Messaggio = "Articolo eliminato: " & codiceArticolo & " (Id " & id & ")",
+                    .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(New With {.Id = id, .CodiceArticolo = codiceArticolo}),
+                    .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = DateTime.Now}
+                })
                 db.SaveChanges()
                 Return Json(New With {.ok = True, .message = "Cancellazione articolo confermata correttamente"})
             Catch ex As Exception
@@ -808,6 +833,8 @@ Namespace Controllers
             End Try
         End Function
 
+        <HttpPost()>
+        <Authorize(Roles:="Admin")>
         Function ImbarazzanteCreazioneArticoli()
             For Each a In db.Brighetti_Articoli.ToList
                 Try

@@ -67,6 +67,15 @@ Public Class MexalSyncService
                         .Data = DateTime.Now, .OperatoreID = operatoreId, .Operatore = operatoreNome
                     }
                 })
+                db.Audit.Add(New Audit With {
+                    .Livello = TipoAuditLivello.Info,
+                    .Indirizzo = "MexalSyncService/Sincronizza",
+                    .Messaggio = "Sincronizzazione giacenze da Mexal: lette " & esito.Lette & ", aggiornate " & esito.Aggiornate & ", create " & esito.Create,
+                    .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(esito),
+                    .UltimaModifica = New TipoUltimaModifica With {
+                        .Data = DateTime.Now, .OperatoreID = operatoreId, .Operatore = operatoreNome
+                    }
+                })
                 db.SaveChanges()
             End Using
             esito.Ok = True

@@ -59,6 +59,14 @@ Namespace Controllers
                     }
                     })
                     db.SaveChanges()
+                    db.Audit.Add(New Audit With {
+                        .Livello = TipoAuditLivello.Info,
+                        .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                        .Messaggio = "Reparto creato: " & brighetti_Reparto.NomeReparto,
+                        .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(brighetti_Reparto),
+                        .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = Opid, .Operatore = OpName, .Data = DateTime.Now}
+                    })
+                    db.SaveChanges()
                     Return Json(New With {.ok = True, .message = "Reparto correttamente inserito"})
                 End If
             Catch ex As Exception
@@ -113,6 +121,14 @@ Namespace Controllers
                         .OperatoreID = OpID
                     }
                     db.SaveChanges()
+                    db.Audit.Add(New Audit With {
+                        .Livello = TipoAuditLivello.Info,
+                        .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                        .Messaggio = "Reparto modificato: " & rep.NomeReparto & " (Id " & rep.IdReparto & ")",
+                        .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(brighetti_Reparto),
+                        .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = DateTime.Now}
+                    })
+                    db.SaveChanges()
                     Return Json(New With {.ok = True, .message = "Reparto correttamente modificato"})
                 End If
                 Return Json(New With {.ok = False, .message = "Errore nella modifica Reparto"})
@@ -150,7 +166,16 @@ Namespace Controllers
                 OpID = User.Identity.GetUserId
                 OpName = User.Identity.GetUserName
                 Dim Rep As Brighetti_Reparto = db.Brighetti_Reparti.Find(idReparto)
+                Dim nomeReparto = Rep.NomeReparto
                 db.Brighetti_Reparti.Remove(Rep)
+                db.SaveChanges()
+                db.Audit.Add(New Audit With {
+                    .Livello = TipoAuditLivello.Warning,
+                    .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                    .Messaggio = "Reparto eliminato: " & nomeReparto & " (Id " & idReparto & ")",
+                    .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(New With {.Id = idReparto, .NomeReparto = nomeReparto}),
+                    .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = DateTime.Now}
+                })
                 db.SaveChanges()
                 Return Json(New With {.ok = True, .message = "Cancellazione Reparto confermata correttamente"})
             Catch ex As Exception

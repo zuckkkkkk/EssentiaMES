@@ -106,6 +106,14 @@ Namespace Controllers
                         .IdUtente = brighetti_Macchina.IdUtente
                     })
                     db.SaveChanges()
+                    db.Audit.Add(New Audit With {
+                        .Livello = TipoAuditLivello.Info,
+                        .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                        .Messaggio = "Macchina creata: " & brighetti_Macchina.NomeMacchina & " (Id " & brighetti_Macchina.IdMacchina & ")",
+                        .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(brighetti_Macchina),
+                        .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = Opid, .Operatore = OpName, .Data = DateTime.Now}
+                    })
+                    db.SaveChanges()
                     Return Json(New With {.ok = True, .message = "Reparto correttamente inserito"})
                 End If
                 Return Json(New With {.ok = False, .message = "Errore creazione Reparto"})
@@ -161,7 +169,7 @@ Namespace Controllers
                         db.SaveChanges()
                     End If
                     If Mac.IdUtente <> brighetti_Macchina.IdUtente Then
-                        Dim asp = appctx.MacchineUsers.Where(Function(x) x.IdUtente = Mac.IdUtente).FirstOrDefault
+                        Dim asp = appctx.MacchineUsers.Where(Function(x) x.IdMacchina = Mac.IdMacchina AndAlso x.IdUtente = Mac.IdUtente).FirstOrDefault
                         If Not IsNothing(asp) Then
                             asp.IdUtente = brighetti_Macchina.IdUtente
                             appctx.SaveChanges()
@@ -177,12 +185,20 @@ Namespace Controllers
                         Mac.NomeMacchina = brighetti_Macchina.NomeMacchina
                         db.SaveChanges()
                     End If
-                    db.SaveChanges()
                     Mac.UltimaModifica = New TipoUltimaModifica With {
                         .Data = DateTime.Now,
                         .Operatore = OpName,
                         .OperatoreID = Opid
                     }
+                    db.SaveChanges()
+                    db.Audit.Add(New Audit With {
+                        .Livello = TipoAuditLivello.Info,
+                        .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                        .Messaggio = "Macchina modificata: " & Mac.NomeMacchina & " (Id " & Mac.IdMacchina & ")",
+                        .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(brighetti_Macchina),
+                        .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = Opid, .Operatore = OpName, .Data = DateTime.Now}
+                    })
+                    db.SaveChanges()
                     Return Json(New With {.ok = True, .message = "Macchina correttamente modificata"})
                 End If
                 Return Json(New With {.ok = False, .message = "Errore modifica macchina"})
@@ -221,7 +237,16 @@ Namespace Controllers
                 OpID = User.Identity.GetUserId
                 OpName = User.Identity.GetUserName
                 Dim Mac As Brighetti_Macchina = db.Brighetti_Macchine.Find(idMacchina)
+                Dim nomeMacchina = Mac.NomeMacchina
                 db.Brighetti_Macchine.Remove(Mac)
+                db.SaveChanges()
+                db.Audit.Add(New Audit With {
+                    .Livello = TipoAuditLivello.Warning,
+                    .Indirizzo = ControllerContext.RouteData.Values("controller") & "/" & ControllerContext.RouteData.Values("action"),
+                    .Messaggio = "Macchina eliminata: " & nomeMacchina & " (Id " & idMacchina & ")",
+                    .Dati = Newtonsoft.Json.JsonConvert.SerializeObject(New With {.IdMacchina = idMacchina, .NomeMacchina = nomeMacchina}),
+                    .UltimaModifica = New TipoUltimaModifica With {.OperatoreID = OpID, .Operatore = OpName, .Data = DateTime.Now}
+                })
                 db.SaveChanges()
                 Return Json(New With {.ok = True, .message = "Cancellazione Macchina confermata correttamente"})
             Catch ex As Exception
